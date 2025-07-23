@@ -1575,7 +1575,7 @@ const Dashboard: React.FC = () => {
                   <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">Performance Review needed</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">KPI Review needed</h3>
                   <p className="text-xs sm:text-sm text-gray-600">
                     {user?.role === 'super-admin' ? 'Clinicians with scores < 70% requiring attention' : 'Team members with scores < 70% requiring attention'}
                   </p>
