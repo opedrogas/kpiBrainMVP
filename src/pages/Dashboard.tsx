@@ -250,6 +250,48 @@ const Dashboard: React.FC = () => {
     return monthlyData;
   }, [getClinicianScore]);
 
+  // Memoized team performance trend data generation
+  const generateTeamTrendData = useCallback((endMonth: string, endYear: number) => {
+    const trendData = [];
+    
+    // Convert month name to month index
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const targetMonthIndex = months.indexOf(endMonth);
+    
+    // Create end date from target month/year
+    const endDate = new Date(endYear, targetMonthIndex, 1);
+    
+    // Get 6 months of data ending at the selected month
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(endDate);
+      date.setMonth(endDate.getMonth() - i);
+      const month = date.toLocaleString('default', { month: 'long' });
+      const year = date.getFullYear();
+      
+      const monthlyScores = userClinicians.map(c => 
+        c.position_info?.role === 'director' 
+          ? getDirectorAverageScore(c.id, month, year)
+          : getClinicianScore(c.id, month, year)
+      );
+      const avgScore = monthlyScores.length > 0 
+        ? Math.round(monthlyScores.reduce((sum, score) => sum + score, 0) / monthlyScores.length)
+        : 0;
+      
+      trendData.push({
+        month: date.toLocaleString('default', { month: 'short' }),
+        fullMonth: month,
+        year: year,
+        avgScore: avgScore,
+        displayName: `${date.toLocaleString('default', { month: 'short' })} ${year.toString().slice(-2)}`
+      });
+    }
+    
+    return trendData;
+  }, [userClinicians, getDirectorAverageScore, getClinicianScore]);
+
   // Calculate trend analysis
   const calculateTrend = (data: any[]) => {
     if (data.length < 2) return { direction: 'stable', percentage: 0 };
@@ -1393,7 +1435,7 @@ const Dashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Team Performance Trend</h3>
-              <p className="text-xs sm:text-sm text-gray-600">Average team performance over last 6 months</p>
+              <p className="text-xs sm:text-sm text-gray-600">Average team performance over 6 months ending {selectedMonth} {selectedYear}</p>
             </div>
             <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
               <TrendingUp className="w-4 h-4" />
@@ -1404,36 +1446,7 @@ const Dashboard: React.FC = () => {
           
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={(() => {
-                const trendData = [];
-                const currentDate = new Date();
-                
-                for (let i = 5; i >= 0; i--) {
-                  const date = new Date();
-                  date.setMonth(currentDate.getMonth() - i);
-                  const month = date.toLocaleString('default', { month: 'long' });
-                  const year = date.getFullYear();
-                  
-                  const monthlyScores = userClinicians.map(c => 
-                    c.position_info?.role === 'director' 
-                      ? getDirectorAverageScore(c.id, month, year)
-                      : getClinicianScore(c.id, month, year)
-                  );
-                  const avgScore = monthlyScores.length > 0 
-                    ? Math.round(monthlyScores.reduce((sum, score) => sum + score, 0) / monthlyScores.length)
-                    : 0;
-                  
-                  trendData.push({
-                    month: date.toLocaleString('default', { month: 'short' }),
-                    fullMonth: month,
-                    year: year,
-                    avgScore: avgScore,
-                    displayName: `${date.toLocaleString('default', { month: 'short' })} ${year.toString().slice(-2)}`
-                  });
-                }
-                
-                return trendData;
-              })()}>
+              <LineChart data={generateTeamTrendData(selectedMonth, selectedYear)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
                   dataKey="displayName" 
