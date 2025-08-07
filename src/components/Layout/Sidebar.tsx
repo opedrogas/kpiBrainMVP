@@ -12,7 +12,9 @@ import {
   ChevronRight,
   UserCheck,
   Tag,
-  Briefcase
+  Briefcase,
+  Clock,
+  FolderOpen
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -32,6 +34,7 @@ const Sidebar: React.FC = () => {
     return [
       { name: 'Dashboard', href: '/', icon: BarChart3, roles: ['super-admin', 'director'] },
       { name: 'KPI Management', href: '/kpis', icon: Target, roles: ['super-admin'] },
+      { name: 'KPI Groups', href: '/kpi-groups', icon: FolderOpen, roles: ['director'] },
       { name: 'Clinicians', href: '/clinicians', icon: Users, roles: ['director'] },
       { name: 'My Reviews', href: '/my-reviews', icon: ClipboardList, roles: ['director'] },
       { name: 'Assign Director', href: '/assign-director', icon: UserCheck, roles: ['super-admin'] },

@@ -9,9 +9,11 @@ import PendingApproval from './components/PendingApproval';
 
 import Dashboard from './pages/Dashboard';
 import KPIManagement from './pages/KPIManagement';
+import KPIGroupManagement from './pages/KPIGroupManagement';
 import ClinicianManagement from './pages/ClinicianManagement';
 import AssignDirector from './pages/AssignDirector';
 import MonthlyReview from './pages/MonthlyReview';
+import WeeklyReview from './pages/WeeklyReview';
 
 import UserManagement from './pages/UserManagement';
 import PermissionManagement from './pages/PermissionManagement';
@@ -66,6 +68,11 @@ const AppContent: React.FC = () => {
             <ClinicianManagement />
           </RoleBasedRoute>
         } />
+        <Route path="kpi-groups" element={
+          <RoleBasedRoute allowedRoles={['director']}>
+            <KPIGroupManagement />
+          </RoleBasedRoute>
+        } />
         <Route path="assign-director" element={
           <RoleBasedRoute allowedRoles={['super-admin']}>
             <AssignDirector />
@@ -74,12 +81,12 @@ const AppContent: React.FC = () => {
         <Route path="clinician/:id" element={<ClinicianProfile />} />
         <Route path="review/:clinicianId" element={
           <RoleBasedRoute allowedRoles={['director']}>
-            <MonthlyReview />
+            <WeeklyReview />
           </RoleBasedRoute>
         } />
         <Route path="my-reviews" element={
           <RoleBasedRoute allowedRoles={['director']}>
-            <MonthlyReview />
+            <WeeklyReview />
           </RoleBasedRoute>
         } />
 
