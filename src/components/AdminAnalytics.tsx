@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useNameFormatter } from '../utils/nameFormatter';
-import { ReviewService } from '../services/reviewService';
 import { 
   Users, 
   UserCheck, 
@@ -20,19 +19,18 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { MonthYearPicker, WeekPicker } from './UI';
+import { MonthYearPicker } from './UI';
 
 interface AdminAnalyticsProps {
   className?: string;
 }
 
 const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
-  const { profiles, kpis, getClinicianScore, getAssignedClinicians, getAssignedDirectors, loading } = useData();
+  const { profiles, getClinicianScore, getAssignedClinicians, getAssignedDirectors, loading } = useData();
   const formatName = useNameFormatter();
 
   // State for controls
   const [userType, setUserType] = useState<'director' | 'clinician'>('clinician');
-  const [dateSelectionType, setDateSelectionType] = useState<'monthly' | 'weekly'>('monthly');
   const [startMonth, setStartMonth] = useState<string>('');
   const [startYear, setStartYear] = useState<number>(new Date().getFullYear());
   const [endMonth, setEndMonth] = useState<string>('');
@@ -43,29 +41,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
   // State for MonthYearPicker dropdowns
   const [startPickerOpen, setStartPickerOpen] = useState(false);
   const [endPickerOpen, setEndPickerOpen] = useState(false);
-  
-  // State for WeekPicker dropdowns
-  const [startWeekPickerOpen, setStartWeekPickerOpen] = useState(false);
-  const [endWeekPickerOpen, setEndWeekPickerOpen] = useState(false);
-  
-  // Week selection states
-  const getCurrentWeek = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const jan1 = new Date(year, 0, 1);
-    const jan1Day = jan1.getDay();
-    const firstMonday = new Date(year, 0, 1 + (jan1Day <= 1 ? 1 - jan1Day : 8 - jan1Day));
-    const diffTime = now.getTime() - firstMonday.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const week = Math.floor(diffDays / 7) + 1;
-    return { year, week: Math.max(1, week) };
-  };
-  
-  const [startWeek, setStartWeek] = useState(() => {
-    const current = getCurrentWeek();
-    return { year: current.year, week: Math.max(1, current.week - 12) }; // 12 weeks ago
-  });
-  const [endWeek, setEndWeek] = useState(getCurrentWeek());
   
   // State for sidebar
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,99 +71,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
     setEndMonth(currentMonthName);
     setEndYear(currentYear);
   }, []);
-
-  // Helper function to get week date range
-  const getWeekDateRange = (year: number, week: number) => {
-    const jan1 = new Date(year, 0, 1);
-    const jan1Day = jan1.getDay();
-    const firstMonday = new Date(year, 0, 1 + (jan1Day <= 1 ? 1 - jan1Day : 8 - jan1Day));
-    
-    const weekStart = new Date(firstMonday);
-    weekStart.setDate(firstMonday.getDate() + (week - 1) * 7);
-    
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
-    
-    return { start: weekStart, end: weekEnd };
-  };
-
-  // Helper function to get month from week
-  const getMonthFromWeek = (year: number, week: number) => {
-    const { start } = getWeekDateRange(year, week);
-    return {
-      month: start.toLocaleString('default', { month: 'long' }),
-      year: start.getFullYear()
-    };
-  };
-
-  // Weekly score calculation for individuals (same logic as Dashboard)
-  const getWeeklyScore = async (clinicianId: string, year: number, week: number): Promise<number> => {
-    try {
-      const { start, end } = getWeekDateRange(year, week);
-      const reviews = await ReviewService.getReviewsByDateRange(clinicianId, start, end);
-      
-      if (reviews.length === 0) return 0;
-      
-      let totalWeight = 0;
-      let earnedWeight = 0;
-      
-      reviews.forEach(review => {
-        const kpi = kpis.find(k => k.id === review.kpi);
-        if (kpi) {
-          totalWeight += kpi.weight;
-          if (review.met_check) {
-            earnedWeight += kpi.weight;
-          }
-        }
-      });
-      
-      return totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0;
-    } catch (error) {
-      console.error('Error calculating weekly score:', error);
-      return 0;
-    }
-  };
-
-  // Weekly score calculation for directors (team average)
-  const getDirectorWeeklyScore = async (directorId: string, year: number, week: number, visited: Set<string> = new Set()): Promise<number> => {
-    // Prevent infinite recursion
-    if (visited.has(directorId)) {
-      return 0;
-    }
-    
-    visited.add(directorId);
-    
-    try {
-      const assignedClinicians = getAssignedClinicians(directorId);
-      const assignedDirectors = getAssignedDirectors(directorId);
-      const allAssignedMembers = [...assignedClinicians, ...assignedDirectors];
-      
-      if (allAssignedMembers.length === 0) {
-        return 0;
-      }
-      
-      const scores = await Promise.all(
-        allAssignedMembers.map(async member => {
-          if (member.position_info?.role === 'director') {
-            return await getDirectorWeeklyScore(member.id, year, week, visited);
-          } else {
-            return await getWeeklyScore(member.id, year, week);
-          }
-        })
-      );
-      
-      const validScores = scores.filter(score => score > 0);
-      if (validScores.length === 0) {
-        return 0;
-      }
-      
-      return Math.round(validScores.reduce((sum, score) => sum + score, 0) / validScores.length);
-    } catch (error) {
-      console.error('Error calculating director weekly score:', error);
-      return 0;
-    }
-  };
 
   // Calculate director's average score based on assigned members
   const getDirectorAverageScore = (directorId: string, month: string, year: number): number => {
@@ -299,71 +181,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
   };
 
   // Generate chart data for selected users
-  const generateChartData = async () => {
-    if (selectedUsers.size === 0) return [];
-
-    // Handle weekly data generation
-    if (dateSelectionType === 'weekly') {
-      if (!startWeek || !endWeek) return [];
-
-      const data = [];
-      let currentYear = startWeek.year;
-      let currentWeek = startWeek.week;
-
-      // Generate weekly data points
-      while (
-        currentYear < endWeek.year || 
-        (currentYear === endWeek.year && currentWeek <= endWeek.week)
-      ) {
-        const weekData: any = {
-          month: `${currentWeek}`, // Just the week number for display
-          fullMonth: `Week ${currentWeek}`,
-          year: currentYear,
-          week: currentWeek,
-          weekYear: currentYear
-        };
-
-        // Calculate scores for selected users asynchronously
-        const userScores = await Promise.all(
-          Array.from(selectedUsers).map(async userId => {
-            const user = profiles.find(p => p.id === userId);
-            if (user) {
-              let score;
-              if (userType === 'director' && user.position_info?.role === 'director') {
-                score = await getDirectorWeeklyScore(userId, currentYear, currentWeek);
-              } else {
-                score = await getWeeklyScore(userId, currentYear, currentWeek);
-              }
-              console.log(`Score for ${user.name} in Week ${currentWeek} ${currentYear}:`, score);
-              return { userId, userName: user.name, score };
-            }
-            return null;
-          })
-        );
-
-        // Add scores to weekData
-        userScores.forEach(userScore => {
-          if (userScore) {
-            weekData[userScore.userName] = userScore.score;
-          }
-        });
-
-        data.push(weekData);
-        
-        // Move to next week
-        currentWeek++;
-        if (currentWeek > 52) { // Assuming 52 weeks per year
-          currentWeek = 1;
-          currentYear++;
-        }
-      }
-
-      console.log('Generated weekly chart data:', data);
-      return data;
-    }
-
-    // Handle monthly data generation (existing logic)
-    if (!startMonth || !endMonth) return [];
+  const generateChartData = () => {
+    if (!startMonth || !endMonth || selectedUsers.size === 0) return [];
 
     const data = [];
     
@@ -452,49 +271,15 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
   };
 
   // Generate table data for selected users
-  const generateTableData = async () => {
-    if (selectedUsers.size === 0) return [];
+  const generateTableData = () => {
+    if (!startMonth || !endMonth || selectedUsers.size === 0) return [];
 
     const selectedUserProfiles = Array.from(selectedUsers)
       .map(id => profiles.find(p => p.id === id))
       .filter(Boolean);
 
-    return await Promise.all(selectedUserProfiles.map(async user => {
-      const scores: any = { user };
-      
-      // Handle weekly data generation
-      if (dateSelectionType === 'weekly') {
-        if (!startWeek || !endWeek) return scores;
-
-        let currentYear = startWeek.year;
-        let currentWeek = startWeek.week;
-
-        // Generate weekly data points
-        while (
-          currentYear < endWeek.year || 
-          (currentYear === endWeek.year && currentWeek <= endWeek.week)
-        ) {
-          const weekKey = `${currentWeek}`; // Just the week number as key
-          
-          if (userType === 'director' && user!.position_info?.role === 'director') {
-            scores[weekKey] = await getDirectorWeeklyScore(user!.id, currentYear, currentWeek);
-          } else {
-            scores[weekKey] = await getWeeklyScore(user!.id, currentYear, currentWeek);
-          }
-          
-          // Move to next week
-          currentWeek++;
-          if (currentWeek > 52) { // Assuming 52 weeks per year
-            currentWeek = 1;
-            currentYear++;
-          }
-        }
-
-        return scores;
-      }
-
-      // Handle monthly data generation (existing logic)
-      if (!startMonth || !endMonth) return scores;
+    return selectedUserProfiles.map(user => {
+      const monthlyScores: any = { user };
       
       // Convert month names to numbers
       const months = [
@@ -521,9 +306,9 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
         const monthKey = current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
         
         if (userType === 'director' && user!.position_info?.role === 'director') {
-          scores[monthKey] = getDirectorAverageScore(user!.id, monthStr, year);
+          monthlyScores[monthKey] = getDirectorAverageScore(user!.id, monthStr, year);
         } else {
-          scores[monthKey] = getClinicianScore(user!.id, monthStr, year);
+          monthlyScores[monthKey] = getClinicianScore(user!.id, monthStr, year);
         }
         
         // Move to next month
@@ -534,38 +319,12 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
         }
       }
 
-      return scores;
-    }));
+      return monthlyScores;
+    });
   };
 
-  // State for async data
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [tableData, setTableData] = useState<any[]>([]);
-  const [dataLoading, setDataLoading] = useState(false);
-
-  // Generate data when dependencies change
-  useEffect(() => {
-    const generateData = async () => {
-      setDataLoading(true);
-      try {
-        const [newChartData, newTableData] = await Promise.all([
-          generateChartData(),
-          generateTableData()
-        ]);
-        setChartData(newChartData);
-        setTableData(newTableData);
-      } catch (error) {
-        console.error('Error generating data:', error);
-        setChartData([]);
-        setTableData([]);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-
-    generateData();
-  }, [selectedUsers, startMonth, startYear, endMonth, endYear, startWeek, endWeek, dateSelectionType, userType]);
-
+  const chartData = generateChartData();
+  const tableData = generateTableData();
   const sortedTableData = sortTableData(tableData);
 
   // Pagination logic
@@ -581,17 +340,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
     setSortColumn('');
     setSortDirection('asc');
   }, [selectedUsers, startMonth, startYear, endMonth, endYear]);
-
-  // Handle date selection type changes
-  useEffect(() => {
-    if (dateSelectionType === 'weekly') {
-      // When switching to weekly, set weeks that correspond to current month range
-      // This is a simplified approach - you might want more sophisticated logic
-      const currentWeek = getCurrentWeek();
-      setStartWeek({ year: currentWeek.year, week: Math.max(1, currentWeek.week - 12) });
-      setEndWeek(currentWeek);
-    }
-  }, [dateSelectionType]);
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -625,25 +373,6 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
     setEndMonth(month);
     setEndYear(year);
     setEndPickerOpen(false);
-  };
-
-  // WeekPicker handlers
-  const handleStartWeekSelect = (week: { year: number; week: number }) => {
-    setStartWeek(week);
-    setStartWeekPickerOpen(false);
-    // Update corresponding month/year for data display
-    const monthData = getMonthFromWeek(week.year, week.week);
-    setStartMonth(monthData.month);
-    setStartYear(monthData.year);
-  };
-
-  const handleEndWeekSelect = (week: { year: number; week: number }) => {
-    setEndWeek(week);
-    setEndWeekPickerOpen(false);
-    // Update corresponding month/year for data display
-    const monthData = getMonthFromWeek(week.year, week.week);
-    setEndMonth(monthData.month);
-    setEndYear(monthData.year);
   };
 
   // Generate colors for chart lines
@@ -701,75 +430,24 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
             </button>
           </div>
 
-          {/* Date Selection Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setDateSelectionType('monthly')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                dateSelectionType === 'monthly'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setDateSelectionType('weekly')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                dateSelectionType === 'weekly'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Weekly
-            </button>
-          </div>
-
-          {/* Date Selectors */}
+          {/* Month Selectors */}
           <div className="flex items-center gap-2">
-            {dateSelectionType === 'monthly' ? (
-              <>
-                <MonthYearPicker
-                  selectedMonth={startMonth}
-                  selectedYear={startYear}
-                  onSelect={handleStartMonthSelect}
-                  isOpen={startPickerOpen}
-                  onToggle={() => setStartPickerOpen(!startPickerOpen)}
-                />
-                <span className="text-gray-500">to</span>
-                <MonthYearPicker
-                  selectedMonth={endMonth}
-                  selectedYear={endYear}
-                  onSelect={handleEndMonthSelect}
-                  isOpen={endPickerOpen}
-                  onToggle={() => setEndPickerOpen(!endPickerOpen)}
-                />
-              </>
-            ) : (
-              <>
-                <WeekPicker
-                  selectedWeek={startWeek}
-                  onWeekChange={handleStartWeekSelect}
-                  isOpen={startWeekPickerOpen}
-                  onToggle={() => setStartWeekPickerOpen(!startWeekPickerOpen)}
-                />
-                <span className="text-gray-500">to</span>
-                <WeekPicker
-                  selectedWeek={endWeek}
-                  onWeekChange={handleEndWeekSelect}
-                  isOpen={endWeekPickerOpen}
-                  onToggle={() => setEndWeekPickerOpen(!endWeekPickerOpen)}
-                />
-              </>
-            )}
+            <MonthYearPicker
+              selectedMonth={startMonth}
+              selectedYear={startYear}
+              onSelect={handleStartMonthSelect}
+              isOpen={startPickerOpen}
+              onToggle={() => setStartPickerOpen(!startPickerOpen)}
+            />
+            <span className="text-gray-500">to</span>
+            <MonthYearPicker
+              selectedMonth={endMonth}
+              selectedYear={endYear}
+              onSelect={handleEndMonthSelect}
+              isOpen={endPickerOpen}
+              onToggle={() => setEndPickerOpen(!endPickerOpen)}
+            />
           </div>
-
-          {/* Info about weekly selection */}
-          {dateSelectionType === 'weekly' && (
-            <div className="text-sm text-gray-500 bg-blue-50 px-3 py-2 rounded-lg">
-              📅 Showing monthly data from {startMonth} {startYear} to {endMonth} {endYear}
-            </div>
-          )}
 
           {/* View Type Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
@@ -940,19 +618,11 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
                 <p>Select users from the sidebar to view their performance data</p>
               </div>
             </div>
-          ) : (dateSelectionType === 'monthly' && (!startMonth || !endMonth)) || 
-              (dateSelectionType === 'weekly' && (!startWeek || !endWeek)) ? (
+          ) : !startMonth || !endMonth ? (
             <div className="flex items-center justify-center h-64 text-gray-500">
               <div className="text-center">
                 <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>Please select start and end {dateSelectionType === 'weekly' ? 'weeks' : 'months'} to view data</p>
-              </div>
-            </div>
-          ) : dataLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p>Loading {dateSelectionType === 'weekly' ? 'weekly' : 'monthly'} data...</p>
+                <p>Please select start and end months to view data</p>
               </div>
             </div>
           ) : viewType === 'table' ? (
@@ -1001,7 +671,7 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className = '' }) => {
                             onClick={() => handleSort(monthData.month)}
                             className="flex items-center space-x-1 hover:text-gray-700 transition-colors"
                           >
-                            <span>{dateSelectionType === 'weekly' ? `Week ${monthData.month}` : monthData.month}</span>
+                            <span>{monthData.month}</span>
                             {renderSortIcon(monthData.month)}
                           </button>
                         </th>

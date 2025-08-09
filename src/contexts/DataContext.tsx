@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { KPI, KPIService } from '../services/kpiService';
 import { ReviewItem, ReviewService } from '../services/reviewService';
-import { KPIGroupService, KPIGroup } from '../services/kpiGroupService';
 import { supabase } from '../lib/supabase';
 
 interface KPIContextType {
@@ -96,7 +95,6 @@ interface DataContextType {
   submitKPIReview: (clinicianId: string, kpiId: string, met: boolean, notes?: string, plan?: string) => Promise<void>;
   getClinicianReviews: (clinicianId: string) => ReviewEntry[];
   getClinicianScore: (clinicianId: string, month: string, year: number) => number;
-  getMonthlyScoreFromWeeklyReviews: (clinicianId: string, month: string, year: number) => Promise<number>;
   refreshReviewItems: () => Promise<void>;
   // Assignment functions
   assignClinician: (clinicianId: string, directorId: string) => Promise<void>;
@@ -112,10 +110,6 @@ interface DataContextType {
   getDirectorSupervisor: (directorId: string) => Profile | null;
   refreshProfiles: () => Promise<void>;
   refreshAssignments: () => Promise<void>;
-  // KPI Group functions
-  getKPIGroupsByDirector: (directorId: string) => Promise<KPIGroup[]>;
-  getKPIGroupTitles: (directorId: string) => Promise<string[]>;
-  getKPIsInGroup: (directorId: string, groupTitle: string) => Promise<string[]>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -828,7 +822,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         year: new Date(r.date).getFullYear(),
         met: r.met_check,
         reviewDate: r.met_check ? undefined : r.date,
-        date: r.date, // Include the original date field for weekly filtering
         notes: r.notes,
         plan: r.plan,
         files: r.file_url ? [r.file_url] : undefined,
@@ -861,27 +854,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     scoreCache.set(cacheKey, score);
     return score;
   }, [profiles, scoreCache]);
-
-  // New function to get monthly scores from weekly reviews
-  const getMonthlyScoreFromWeeklyReviews = useCallback(async (clinicianId: string, month: string, year: number) => {
-    // Check if the ID belongs to a director and if they are approved
-    const profile = profiles.find(p => p.id === clinicianId);
-    
-    // Only calculate scores for approved users
-    if (!profile || !profile.accept) {
-      return 0;
-    }
-    
-    try {
-      // Calculate monthly score from weekly reviews
-      const monthNumber = new Date(Date.parse(month + " 1, 2000")).getMonth() + 1;
-      return await ReviewService.getMonthlyScoreFromWeeklyReviews(clinicianId, monthNumber, year);
-    } catch (error) {
-      console.error('Error calculating monthly score from weekly reviews:', error);
-      // Fallback to old calculation method
-      return getClinicianScoreInternal(clinicianId, month, year);
-    }
-  }, [profiles]);
   
   // Memoized review data by month/year to avoid repeated filtering
   const reviewsByMonthYear = useMemo(() => {
@@ -1127,34 +1099,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // KPI Group functions
-  const getKPIGroupsByDirector = async (directorId: string): Promise<KPIGroup[]> => {
-    try {
-      return await KPIGroupService.getKPIGroupsByDirector(directorId);
-    } catch (err) {
-      console.error('Error fetching KPI groups:', err);
-      return [];
-    }
-  };
-
-  const getKPIGroupTitles = async (directorId: string): Promise<string[]> => {
-    try {
-      return await KPIGroupService.getGroupTitlesByDirector(directorId);
-    } catch (err) {
-      console.error('Error fetching KPI group titles:', err);
-      return [];
-    }
-  };
-
-  const getKPIsInGroup = async (directorId: string, groupTitle: string): Promise<string[]> => {
-    try {
-      return await KPIGroupService.getKPIsInGroup(directorId, groupTitle);
-    } catch (err) {
-      console.error('Error fetching KPIs in group:', err);
-      return [];
-    }
-  };
-
   return (
     <DataContext.Provider value={{
       kpis,
@@ -1179,7 +1123,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       submitReview,
       getClinicianReviews,
       getClinicianScore,
-      getMonthlyScoreFromWeeklyReviews,
       assignClinician,
       unassignClinician,
       assignDirector,
@@ -1194,9 +1137,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshProfiles,
       refreshAssignments,
       refreshReviewItems,
-      getKPIGroupsByDirector,
-      getKPIGroupTitles,
-      getKPIsInGroup,
     }}>
       {children}
     </DataContext.Provider>
