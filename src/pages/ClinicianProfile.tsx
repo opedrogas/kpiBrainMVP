@@ -11,7 +11,10 @@ const ClinicianProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { profiles, kpis, getClinicianScore, getClinicianReviews } = useData();
   const formatName = useNameFormatter();
+  
+  // State for AI analysis loading
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
   // Find the staff member profile from the profiles array (clinician or director)
   const staffMember = profiles.find(p => p.id === id && (p.position_info?.role === 'clinician' || p.position_info?.role === 'director'));
   const reviews = getClinicianReviews(id || '');
@@ -85,7 +88,8 @@ const ClinicianProfile: React.FC = () => {
       alert('Error generating PDF. Please try again.');
     }
   };
-   const handleAIAnalysis = async () => {
+
+  const handleAIAnalysis = async () => {
     if (!staffMember) return;
     
     setIsAnalyzing(true);
@@ -129,6 +133,7 @@ const ClinicianProfile: React.FC = () => {
       setIsAnalyzing(false);
     }
   };
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
@@ -188,7 +193,7 @@ const ClinicianProfile: React.FC = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-4">      
+      <div className="flex flex-wrap gap-4">
         <Link
           to={`/review/${staffMember.id}`}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
