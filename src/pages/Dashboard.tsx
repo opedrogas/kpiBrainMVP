@@ -380,7 +380,7 @@ const Dashboard: React.FC = () => {
              reviewMonth === month && 
              reviewYear === year;
     });
-
+   
     return kpis.map(kpi => {
       const kpiReview = monthReviews.find(review => review.kpi === kpi.id);
       return {
@@ -750,7 +750,7 @@ const handleAIAnalysis = async () => {
 
             <button
                   onClick={handleAIAnalysis}
-                  disabled={isAnalyzing || myScore===101}
+                  disabled={isAnalyzing || myScore===100 || myReviews.length === 0}
                   className="flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 sm:py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors w-full sm:w-auto text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isAnalyzing ? (
@@ -1065,7 +1065,7 @@ const handleAIAnalysis = async () => {
 
                 <button
                   onClick={handleAIAnalysis}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || myScore===100 || myReviews.length === 0}
                   className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Generate AI Performance Analysis"
                 >
