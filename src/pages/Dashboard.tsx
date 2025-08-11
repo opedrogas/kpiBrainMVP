@@ -754,10 +754,10 @@ const handleAIAnalysis = async () => {
                     <Brain className="w-4 h-4" />
                   )}
                   <span className="hidden sm:inline">
-                    {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
+                    {isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}
                   </span>
                   <span className="sm:hidden">
-                    {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
+                    {isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}
                   </span>
                 </button>
           </div>
@@ -1069,7 +1069,7 @@ const handleAIAnalysis = async () => {
                   ) : (
                     <Brain className="w-4 h-4" />
                   )}
-                  <span>{isAnalyzing ? 'Analyzing...' : 'AI Analysis'}</span>
+                  <span>{isAnalyzing ? 'Analyzing...' : 'Suggested Next Steps'}</span>
                 </button>
               </div>
             </div>
