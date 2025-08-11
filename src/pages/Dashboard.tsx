@@ -621,13 +621,18 @@ const handleAIAnalysis = async () => {
         };
       });
 
+      // Calculate current month score based on weighted KPI performance
+      const totalWeight = kpiPerformance.reduce((sum, kpi) => sum + kpi.weight, 0);
+      const weightedScore = kpiPerformance.reduce((sum, kpi) => sum + (kpi.percentage * kpi.weight), 0);
+      const calculatedCurrentScore = totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
+
       // Prepare data for AI analysis
       const analysisData: ClinicianAnalysisData = {
         clinicianId: user.id,
         clinicianName: clinicianProfile.name,
         position: clinicianProfile.position_info?.position_title || 'Clinician',
         department: clinicianProfile.clinician_info?.type_info?.title || 'General',
-        currentScore,
+        currentScore: calculatedCurrentScore,
         performanceHistory,
         kpiPerformance,
         reviewCount: reviews.length,
@@ -745,7 +750,7 @@ const handleAIAnalysis = async () => {
 
             <button
                   onClick={handleAIAnalysis}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || myScore===101}
                   className="flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 sm:py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors w-full sm:w-auto text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isAnalyzing ? (
@@ -754,10 +759,10 @@ const handleAIAnalysis = async () => {
                     <Brain className="w-4 h-4" />
                   )}
                   <span className="hidden sm:inline">
-                    {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
+                    {isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}
                   </span>
                   <span className="sm:hidden">
-                    {isAnalyzing ? 'Analyzing...' : 'AI Analysis'}
+                    {isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}
                   </span>
                 </button>
           </div>
@@ -1069,7 +1074,7 @@ const handleAIAnalysis = async () => {
                   ) : (
                     <Brain className="w-4 h-4" />
                   )}
-                  <span>{isAnalyzing ? 'Analyzing...' : 'AI Analysis'}</span>
+                  <span>{isAnalyzing ? 'Analyzing...' : 'Suggested Next Steps'}</span>
                 </button>
               </div>
             </div>

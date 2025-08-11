@@ -91,6 +91,11 @@ const ClinicianProfile: React.FC = () => {
     setIsAnalyzing(true);
     
     try {
+      // Calculate current month score based on weighted KPI performance
+      const totalWeight = kpiPerformance.reduce((sum, kpi) => sum + kpi.weight, 0);
+      const weightedScore = kpiPerformance.reduce((sum, kpi) => sum + (kpi.percentage * kpi.weight), 0);
+      const calculatedCurrentScore = totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
+
       // Prepare data for AI analysis
       const analysisData: ClinicianAnalysisData = {
         clinicianId: staffMember.id,
@@ -99,7 +104,7 @@ const ClinicianProfile: React.FC = () => {
         department: isDirector 
           ? staffMember.director_info?.direction || 'General Direction'
           : staffMember.clinician_info?.type_info?.title || 'General',
-        currentScore,
+        currentScore: calculatedCurrentScore,
         performanceHistory: performanceData.map(data => ({
           month: data.monthName,
           year: data.year,
@@ -215,7 +220,7 @@ const ClinicianProfile: React.FC = () => {
           ) : (
             <Brain className="w-4 h-4" />
           )}
-          <span>{isAnalyzing ? 'Analyzing...' : 'AI Analysis'}</span>
+          <span>{isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}</span>
         </button>
       </div>
 
