@@ -3,7 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useNameFormatter } from '../utils/nameFormatter';
-import { User, Mail, Calendar, ChevronRight, ClipboardList, TrendingUp, UserCheck, Navigation, ChevronDown, ChevronUp, Target, Check, X, FileText, Download, ExternalLink, AlertCircle, Clock } from 'lucide-react';
+import { User, Mail, Calendar, ChevronRight, ClipboardList, TrendingUp, UserCheck, Navigation, ChevronDown, ChevronUp, Target, Check, X, FileText, Download, ExternalLink, AlertCircle } from 'lucide-react';
 
 const ClinicianManagement: React.FC = () => {
   const { 
@@ -47,17 +47,8 @@ const ClinicianManagement: React.FC = () => {
     return 'text-red-600 bg-red-100';
   };
 
-  // Helper function to calculate director's average score with recursion protection
-  const getDirectorAverageScoreInternal = (directorId: string, month: string, year: number, visited: Set<string>): number => {
-    // Prevent infinite recursion by checking if we've already visited this director
-    if (visited.has(directorId)) {
-      return 0; // Return 0 to avoid circular references
-    }
-    
-    // Add current director to visited set
-    const newVisited = new Set(visited);
-    newVisited.add(directorId);
-    
+  // Calculate director's average score based on assigned members
+  const getDirectorAverageScore = (directorId: string, month: string, year: number): number => {
     const assignedClinicians = getAssignedClinicians(directorId);
     const assignedDirectors = getAssignedDirectors(directorId);
     const allAssignedMembers = [...assignedClinicians, ...assignedDirectors];
@@ -67,12 +58,8 @@ const ClinicianManagement: React.FC = () => {
     }
     
     const scores = allAssignedMembers.map(member => {
-      // For assigned directors, get their director average score; for clinicians, get their individual score
-      if (member.position_info?.role === 'director') {
-        return getDirectorAverageScoreInternal(member.id, month, year, newVisited);
-      } else {
-        return getClinicianScore(member.id, month, year);
-      }
+      // For both assigned directors and clinicians, get their individual clinician score
+      return getClinicianScore(member.id, month, year);
     });
     
     const validScores = scores.filter(score => score > 0);
@@ -81,11 +68,6 @@ const ClinicianManagement: React.FC = () => {
     }
     
     return Math.round(validScores.reduce((sum, score) => sum + score, 0) / validScores.length);
-  };
-
-  // Calculate director's average score based on assigned members
-  const getDirectorAverageScore = (directorId: string, month: string, year: number): number => {
-    return getDirectorAverageScoreInternal(directorId, month, year, new Set());
   };
 
   // Toggle expanded state for a staff member
@@ -138,7 +120,7 @@ const ClinicianManagement: React.FC = () => {
   // Debug logging
   useEffect(() => {
     console.log('Current user:', user);
-    console.log('Assigned employees:', assignedClinicians);
+    console.log('Assigned clinicians:', assignedClinicians);
     console.log('Assigned directors:', assignedDirectors);
     console.log('All assigned staff:', allAssignedStaff);
   }, [user, assignedClinicians, assignedDirectors, allAssignedStaff]);
@@ -178,7 +160,7 @@ const ClinicianManagement: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
           <p className="text-gray-600 mt-1">
-            Manage your assigned team members (employees and directors) and track their performance
+            Manage your assigned team members (clinicians and directors) and track their performance
           </p>
         </div>
         <button
@@ -207,7 +189,7 @@ const ClinicianManagement: React.FC = () => {
             <div className="text-2xl font-bold text-purple-600">
               {assignedClinicians.length}
             </div>
-            <div className="text-sm text-purple-700">Employees</div>
+            <div className="text-sm text-purple-700">Clinicians</div>
           </div>
           <div className="text-center p-4 bg-indigo-50 rounded-lg">
             <div className="text-2xl font-bold text-indigo-600">
@@ -218,7 +200,7 @@ const ClinicianManagement: React.FC = () => {
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <div className="text-2xl font-bold text-green-600">
               {allAssignedStaff.filter(s => {
-                const score = getClinicianScore(s.id, currentMonth, currentYear); // Always use individual scores for assigned staff
+                 const score = getClinicianScore(s.id, currentMonth, currentYear);
                 return score >= 90;
               }).length}
             </div>
@@ -227,7 +209,7 @@ const ClinicianManagement: React.FC = () => {
           <div className="text-center p-4 bg-red-50 rounded-lg">
             <div className="text-2xl font-bold text-red-600">
               {allAssignedStaff.filter(s => {
-                const score = getClinicianScore(s.id, currentMonth, currentYear); // Always use individual scores for assigned staff
+                const score = getClinicianScore(s.id, currentMonth, currentYear);
                 return score < 70;
               }).length}
             </div>
@@ -239,7 +221,7 @@ const ClinicianManagement: React.FC = () => {
       {/* Staff Grid */}
       <div className="grid grid-cols-1 gap-6">
         {allAssignedStaff.map((staffMember) => {
-          const currentScore = getClinicianScore(staffMember.id, currentMonth, currentYear); // Always use individual scores for assigned staff
+          const currentScore = getClinicianScore(staffMember.id, currentMonth, currentYear);
           const scoreColorClass = getPerformanceColor(currentScore);
           const isExpanded = expandedStaff.has(staffMember.id);
           const kpiDetails = getStaffKPIDetails(staffMember.id);
@@ -318,8 +300,8 @@ const ClinicianManagement: React.FC = () => {
                         to={`/review/${staffMember.id}`}
                         className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center space-x-1"
                       >
-                        <Clock className="w-4 h-4" />
-                        <span>Weekly Review</span>
+                        <ClipboardList className="w-4 h-4" />
+                        <span>Review</span>
                       </Link>
                     )}
                   </div>
@@ -473,7 +455,7 @@ const ClinicianManagement: React.FC = () => {
           <User className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Assigned Staff Members</h3>
           <p className="text-gray-600">
-            You don't have any staff members (employees or directors) assigned to you yet. Contact your administrator to assign staff to your supervision.
+            You don't have any staff members (clinicians or directors) assigned to you yet. Contact your administrator to assign staff to your supervision.
           </p>
         </div>
       )}

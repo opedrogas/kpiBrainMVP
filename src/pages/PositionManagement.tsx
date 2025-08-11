@@ -393,7 +393,7 @@ const PositionManagement: React.FC = () => {
                   >
                     <option value="super-admin">Super Admin</option>
                     <option value="director">Director</option>
-                    <option value="clinician">Employee</option>
+                    <option value="clinician">Clinician</option>
                   </select>
                 </div>
 
@@ -449,7 +449,7 @@ const PositionManagement: React.FC = () => {
                   >
                     <option value="super-admin">Super Admin</option>
                     <option value="director">Director</option>
-                    <option value="clinician">Employee</option>
+                    <option value="clinician">Clinician</option>
                   </select>
                 </div>
 

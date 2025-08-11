@@ -418,7 +418,7 @@ const AuthPage: React.FC = () => {
                     onChange={(e) => setRole(e.target.value as 'admin' | 'director' | 'clinician')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   >
-                    <option value="clinician">Employee</option>
+                    <option value="clinician">Clinician</option>
                     <option value="director">Director</option>
                     <option value="admin">Admin</option>
                   </select>
