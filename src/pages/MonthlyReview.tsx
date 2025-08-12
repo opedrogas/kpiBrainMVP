@@ -8,6 +8,7 @@ import { FileUploadService, UploadedFile } from '../services/fileUploadService';
 import { Check, X, Calendar, FileText, Upload, Save, AlertCircle, Target, TrendingUp, Download, RefreshCw, File, Trash2, ExternalLink } from 'lucide-react';
 import { EnhancedSelect, MonthYearPicker } from '../components/UI';
 import { generateReviewPDF } from '../utils/pdfGenerator';
+import { AIImprovementService } from '../services/aiAnalysisService';
 
 interface ReviewFormData {
   [kpiId: string]: {
@@ -45,6 +46,8 @@ const MonthlyReview: React.FC = () => {
   const [existingReviews, setExistingReviews] = useState<ReviewItem[]>([]);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
+  // Track loading states for AI improvement generation per KPI
+  const [improvementLoading, setImprovementLoading] = useState<Record<string, boolean>>({});
   
   // State for MonthYearPicker dropdowns
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
@@ -169,6 +172,9 @@ const MonthlyReview: React.FC = () => {
       }
     }));
 
+    // When director marks KPI as Not Met, reveal the Next Step button by ensuring the block renders
+    // (UI is already controlled by isMet === false)
+
     // Clear errors when user starts fixing them
     if (errors[kpiId]) {
       setErrors(prev => {
@@ -176,6 +182,62 @@ const MonthlyReview: React.FC = () => {
         delete newErrors[kpiId];
         return newErrors;
       });
+    }
+  };
+
+  // Trigger AI to propose an improvement plan using notes + KPI metadata
+  const handleSuggestNextStep = async (kpiId: string, kpiTitle: string, kpiWeight: number) => {
+    const kpiData = reviewData[kpiId] || {};
+
+    // Require performance notes first
+    if (!kpiData.notes || !kpiData.notes.trim()) {
+      setErrors(prev => ({
+        ...prev,
+        [kpiId]: 'Performance notes are required to suggest the next step.'
+      }));
+      return;
+    }
+
+    // Find the full KPI object to get floor and description
+    const kpi = kpis.find(k => k.id === kpiId);
+    if (!kpi) {
+      setErrors(prev => ({
+        ...prev,
+        [kpiId]: 'KPI data not found. Please try again.'
+      }));
+      return;
+    }
+
+    try {
+      setImprovementLoading(prev => ({ ...prev, [kpiId]: true }));
+
+      const plan = await AIImprovementService.generateImprovementPlan({
+        kpiId,
+        kpiTitle,
+        weight: kpiWeight,
+        notes: kpiData.notes.trim(),
+        month: selectedMonth,
+        year: selectedYear,
+        floor: kpi.floor,
+        description: kpi.description
+      });
+
+      // Fallback if service returns empty
+      const finalPlan = plan && plan.trim().length > 0 ? plan : 'For the coming month, focus on targeted actions based on the notes above; schedule a follow-up to assess progress and adjust as needed.';
+
+      // Write plan into form state
+      setReviewData(prev => ({
+        ...prev,
+        [kpiId]: {
+          ...prev[kpiId],
+          plan: finalPlan,
+        },
+      }));
+    } catch (err) {
+      console.error('Failed to generate improvement plan:', err);
+      alert('Unable to generate improvement plan at the moment. Please try again later.');
+    } finally {
+      setImprovementLoading(prev => ({ ...prev, [kpiId]: false }));
     }
   };
 
@@ -958,6 +1020,20 @@ const MonthlyReview: React.FC = () => {
                       <X className="w-4 sm:w-5 h-4 sm:h-5" />
                       <span>Not Met</span>
                     </button>
+                    {!isMyReviewsMode && isMet === false && (
+                      <button
+                        type="button"
+                        onClick={() => handleSuggestNextStep(kpi.id, kpi.title, kpi.weight)}
+                        className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base bg-indigo-600 text-white hover:bg-indigo-700"
+                      >
+                        {improvementLoading[kpi.id] ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Target className="w-4 h-4" />
+                        )}
+                        <span>Suposed Next Step</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 

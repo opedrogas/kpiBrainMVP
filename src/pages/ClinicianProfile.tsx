@@ -85,55 +85,7 @@ const ClinicianProfile: React.FC = () => {
       alert('Error generating PDF. Please try again.');
     }
   };
-   const handleAIAnalysis = async () => {
-    if (!staffMember) return;
-    
-    setIsAnalyzing(true);
-    
-    try {
-      // Calculate current month score based on weighted KPI performance
-      const totalWeight = kpiPerformance.reduce((sum, kpi) => sum + kpi.weight, 0);
-      const weightedScore = kpiPerformance.reduce((sum, kpi) => sum + (kpi.percentage * kpi.weight), 0);
-      const calculatedCurrentScore = totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
-
-      // Prepare data for AI analysis
-      const analysisData: ClinicianAnalysisData = {
-        clinicianId: staffMember.id,
-        clinicianName: staffMember.name,
-        position: staffMember.position_info?.position_title || (isDirector ? 'Director' : 'Clinician'),
-        department: isDirector 
-          ? staffMember.director_info?.direction || 'General Direction'
-          : staffMember.clinician_info?.type_info?.title || 'General',
-        currentScore: calculatedCurrentScore,
-        performanceHistory: performanceData.map(data => ({
-          month: data.monthName,
-          year: data.year,
-          score: data.score
-        })),
-        kpiPerformance: kpiPerformance.map(kpi => ({
-          kpiTitle: kpi.title,
-          percentage: kpi.percentage,
-          weight: kpi.weight,
-          met: kpi.met,
-          total: kpi.total
-        })),
-        reviewCount: reviews.length,
-        startDate: staffMember.created_at
-      };
-
-      // Get AI analysis
-      const analysisResult = await aiAnalysisService.analyzeClinicianPerformance(analysisData);
-      
-      // Generate and download PDF
-      generateAIAnalysisPDF(analysisData, analysisResult);
-      
-    } catch (error) {
-      console.error('Error generating AI analysis:', error);
-      alert('Error generating AI analysis. Please try again.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+   
   return (
     <div className="space-y-6">
       {/* Profile Header */}
@@ -210,18 +162,7 @@ const ClinicianProfile: React.FC = () => {
           <span>Download Summary</span>
         </button>
 
-        <button
-          onClick={handleAIAnalysis}
-          disabled={isAnalyzing}
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isAnalyzing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Brain className="w-4 h-4" />
-          )}
-          <span>{isAnalyzing ? 'Analyzing...' : 'Suggested next Steps'}</span>
-        </button>
+       
       </div>
 
       {/* Performance Chart */}
