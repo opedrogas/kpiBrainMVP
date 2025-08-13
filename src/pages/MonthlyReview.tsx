@@ -1236,7 +1236,7 @@ const MonthlyReview: React.FC = () => {
                             ) : (
                               <Target className="w-4 sm:w-5 h-4 sm:h-5" />
                             )}
-                            <span>Suposed Next Step</span>
+                            <span>Suggested Next Step</span>
                           </button>
                         </div>
                       )}
