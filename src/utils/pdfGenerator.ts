@@ -220,7 +220,7 @@ export const generateReviewPDF = (
     
     doc.setFontSize(14);
     doc.setTextColor(34, 197, 94); // Green color
-    doc.text('🎉 Excellent Performance!', margin + 10, currentY + 5);
+    doc.text(' Excellent Performance!', margin + 10, currentY + 5);
     
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
@@ -451,32 +451,40 @@ export const generatePerformancePDF = (
 
     // Summary boxes
     doc.setFillColor(59, 130, 246, 0.1);
-    doc.rect(margin, yPosition, (pageWidth - margin * 3) / 3, 30, 'F');
+    doc.rect(margin, yPosition, (pageWidth - margin * 3) / 3, 27, 'F');
     doc.setFontSize(10);
     doc.setTextColor(59, 130, 246);
-    doc.text('Total KPIs', margin + 5, yPosition + 10);
+    doc.text('Total KPIs', margin + 5, yPosition + 7.5);
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text(kpis.length.toString(), margin + 5, yPosition + 20);
+    doc.text(kpis.length.toString(), margin + 5, yPosition + 15);
+    doc.setFontSize(10);
+    doc.setTextColor(59, 130, 246);
+    doc.text('Active indicators', margin + 5, yPosition + 22.5);
 
     doc.setFillColor(34, 197, 94, 0.1);
-    doc.rect(margin + (pageWidth - margin * 3) / 3 + 5, yPosition, (pageWidth - margin * 3) / 3, 30, 'F');
+    doc.rect(margin + (pageWidth - margin * 3) / 3 + 5, yPosition, (pageWidth - margin * 3) / 3, 27, 'F');
     doc.setFontSize(10);
     doc.setTextColor(34, 197, 94);
-    doc.text('Avg Met Rate', margin + (pageWidth - margin * 3) / 3 + 10, yPosition + 10);
+    doc.text('Avg Met Rate', margin + (pageWidth - margin * 3) / 3 + 10, yPosition + 7.5);
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text(`${avgMetRate}%`, margin + (pageWidth - margin * 3) / 3 + 10, yPosition + 20);
+    doc.text(`${avgMetRate}%`, margin + (pageWidth - margin * 3) / 3 + 10, yPosition + 15);
+    doc.setFontSize(10);
+    doc.setTextColor(34, 197, 94);
+    doc.text('Across all KPIs',  margin + (pageWidth - margin * 3) / 3 + 10, yPosition + 22.5);
 
     doc.setFillColor(245, 158, 11, 0.1);
-    doc.rect(margin + 2 * ((pageWidth - margin * 3) / 3) + 10, yPosition, (pageWidth - margin * 3) / 3, 30, 'F');
+    doc.rect(margin + 2 * ((pageWidth - margin * 3) / 3) + 10, yPosition, (pageWidth - margin * 3) / 3, 27, 'F');
     doc.setFontSize(10);
     doc.setTextColor(245, 158, 11);
-    doc.text('Needs Attention', margin + 2 * ((pageWidth - margin * 3) / 3) + 15, yPosition + 10);
+    doc.text('Needs Attention', margin + 2 * ((pageWidth - margin * 3) / 3) + 15, yPosition + 7.5);
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text(kpisNeedingAttention.toString(), margin + 2 * ((pageWidth - margin * 3) / 3) + 15, yPosition + 20);
-
+    doc.text(kpisNeedingAttention.toString(), margin + 2 * ((pageWidth - margin * 3) / 3) + 15, yPosition + 15);
+    doc.setFontSize(10);
+    doc.setTextColor(245, 158, 11);
+    doc.text('KPIs below 70%', margin + 2 * ((pageWidth - margin * 3) / 3) + 15, yPosition + 22.5);
     yPosition += 50;
 
     // Staff Needing Attention Summary

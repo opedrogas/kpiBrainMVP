@@ -1020,20 +1020,7 @@ const MonthlyReview: React.FC = () => {
                       <X className="w-4 sm:w-5 h-4 sm:h-5" />
                       <span>Not Met</span>
                     </button>
-                    {!isMyReviewsMode && isMet === false && (
-                      <button
-                        type="button"
-                        onClick={() => handleSuggestNextStep(kpi.id, kpi.title, kpi.weight)}
-                        className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base bg-indigo-600 text-white hover:bg-indigo-700"
-                      >
-                        {improvementLoading[kpi.id] ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Target className="w-4 h-4" />
-                        )}
-                        <span>Suposed Next Step</span>
-                      </button>
-                    )}
+
                   </div>
                 </div>
 
@@ -1237,6 +1224,22 @@ const MonthlyReview: React.FC = () => {
                         required={!isMyReviewsMode}
                         disabled={isMyReviewsMode}
                       />
+                      {!isMyReviewsMode && (
+                        <div className="mt-3 sm:mt-4">
+                          <button
+                            type="button"
+                            onClick={() => handleSuggestNextStep(kpi.id, kpi.title, kpi.weight)}
+                            className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow-md w-full sm:w-auto"
+                          >
+                            {improvementLoading[kpi.id] ? (
+                              <RefreshCw className="w-4 sm:w-5 h-4 sm:h-5 animate-spin" />
+                            ) : (
+                              <Target className="w-4 sm:w-5 h-4 sm:h-5" />
+                            )}
+                            <span>Suposed Next Step</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
