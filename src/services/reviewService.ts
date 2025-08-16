@@ -38,18 +38,25 @@ export class ReviewService {
    * Create a new review item
    */
   static async createReviewItem(reviewData: CreateReviewItemData): Promise<ReviewItem> {
+    const insertData: any = {
+      clinician: reviewData.clinician,
+      kpi: reviewData.kpi,
+      director: reviewData.director || null,
+      met_check: reviewData.met_check,
+      notes: reviewData.notes || null,
+      plan: reviewData.plan || null,
+      score: reviewData.score,
+      file_url: reviewData.file_url || null,
+    };
+
+    // If a custom date is provided, use it; otherwise let the database use the default (current timestamp)
+    if (reviewData.date) {
+      insertData.date = reviewData.date;
+    }
+
     const { data, error } = await supabase
       .from('review_items')
-      .insert({
-        clinician: reviewData.clinician,
-        kpi: reviewData.kpi,
-        director: reviewData.director || null,
-        met_check: reviewData.met_check,
-        notes: reviewData.notes || null,
-        plan: reviewData.plan || null,
-        score: reviewData.score,
-        file_url: reviewData.file_url || null,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -164,6 +171,7 @@ export class ReviewService {
     if (reviewData.score !== undefined) updateData.score = reviewData.score;
     if (reviewData.file_url !== undefined) updateData.file_url = reviewData.file_url;
     if (reviewData.director !== undefined) updateData.director = reviewData.director;
+    if (reviewData.date !== undefined) updateData.date = reviewData.date;
 
     const { data, error } = await supabase
       .from('review_items')
@@ -301,6 +309,51 @@ export class ReviewService {
     }
 
     return (data?.length || 0) > 0;
+  }
+
+  /**
+   * Check if a review date is valid (only current month or previous month)
+   */
+  static isValidReviewDate(date: string): boolean {
+    const reviewDate = new Date(date);
+    const now = new Date();
+    
+    // Allow reviews only for current month and previous month
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const reviewMonthStart = new Date(reviewDate.getFullYear(), reviewDate.getMonth(), 1);
+    
+    return reviewMonthStart >= previousMonthStart && reviewMonthStart <= currentMonthStart;
+  }
+
+  /**
+   * Create a review for a specific month/year (convenience method)
+   */
+  static async createReviewForPeriod(
+    clinicianId: string,
+    kpiId: string,
+    directorId: string | undefined,
+    month: string, // Month name like "January"
+    year: number,
+    reviewData: Omit<CreateReviewItemData, 'clinician' | 'kpi' | 'director' | 'date'>
+  ): Promise<ReviewItem> {
+    // Calculate the date for the first day of the specified month at noon
+    const monthNumber = new Date(Date.parse(month + " 1, 2000")).getMonth();
+    const reviewDate = new Date(year, monthNumber, 1, 12, 0, 0);
+    const reviewDateISO = reviewDate.toISOString();
+    
+    // Validate that the review date is only current or previous month
+    if (!this.isValidReviewDate(reviewDateISO)) {
+      throw new Error('Reviews can only be created for the current month or previous month');
+    }
+    
+    return this.createReviewItem({
+      ...reviewData,
+      clinician: clinicianId,
+      kpi: kpiId,
+      director: directorId,
+      date: reviewDateISO
+    });
   }
 
   /**

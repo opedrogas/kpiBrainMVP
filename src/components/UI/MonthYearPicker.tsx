@@ -58,7 +58,11 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   };
 
   const handleNextYear = () => {
-    if (viewYear < currentYear) {
+    // Only allow current year and previous year (if current month is January)
+    const currentMonthIndex = months.indexOf(currentMonth);
+    const maxYear = currentMonthIndex === 0 ? currentYear : currentYear;
+    
+    if (viewYear < maxYear) {
       setViewYear(prev => prev + 1);
     }
   };
@@ -108,7 +112,20 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
           <div className="flex items-center justify-between p-3 border-b border-gray-200">
             <button
               onClick={handlePreviousYear}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              disabled={(() => {
+                const currentMonthIndex = months.indexOf(currentMonth);
+                const minYear = currentMonthIndex === 0 ? currentYear - 1 : currentYear;
+                return viewYear <= minYear;
+              })()}
+              className={`p-1 rounded transition-colors ${
+                (() => {
+                  const currentMonthIndex = months.indexOf(currentMonth);
+                  const minYear = currentMonthIndex === 0 ? currentYear - 1 : currentYear;
+                  return viewYear <= minYear;
+                })()
+                  ? 'text-gray-300 cursor-not-allowed' 
+                  : 'hover:bg-gray-100'
+              }`}
               title="Previous Year"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -118,9 +135,17 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
             
             <button
               onClick={handleNextYear}
-              disabled={viewYear >= currentYear}
+              disabled={(() => {
+                const currentMonthIndex = months.indexOf(currentMonth);
+                const maxYear = currentMonthIndex === 0 ? currentYear : currentYear;
+                return viewYear >= maxYear;
+              })()}
               className={`p-1 rounded transition-colors ${
-                viewYear >= currentYear 
+                (() => {
+                  const currentMonthIndex = months.indexOf(currentMonth);
+                  const maxYear = currentMonthIndex === 0 ? currentYear : currentYear;
+                  return viewYear >= maxYear;
+                })()
                   ? 'text-gray-300 cursor-not-allowed' 
                   : 'hover:bg-gray-100'
               }`}
@@ -156,7 +181,10 @@ const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
 
           {/* Current Selection Info */}
           <div className="px-3 pb-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Selected: {selectedMonth} {selectedYear}
+            <div>Selected: {selectedMonth} {selectedYear}</div>
+            <div className="mt-1 text-xs text-gray-400">
+              Only current month and previous month are allowed
+            </div>
           </div>
         </div>
       )}

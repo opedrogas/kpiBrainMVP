@@ -345,6 +345,21 @@ const MonthlyReview: React.FC = () => {
     const today = new Date().toISOString().split('T')[0];
     let completedKPIsCount = 0;
 
+    // Validate that the selected month/year is only current month or previous month
+    const currentDate = new Date();
+    const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const selectedMonthStart = new Date(selectedYear, new Date(Date.parse(selectedMonth + " 1, 2000")).getMonth(), 1);
+    
+    // Calculate one month back from current month
+    const previousMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    
+    // Check if selected month is valid (current month or previous month only)
+    if (selectedMonthStart > currentMonthStart || selectedMonthStart < previousMonthStart) {
+      setSubmitError('Reviews can only be created for the current month or previous month.');
+      setErrors(newErrors);
+      return false;
+    }
+
     kpis.forEach(kpi => {
       const kpiData = reviewData[kpi.id];
       
@@ -476,6 +491,12 @@ const MonthlyReview: React.FC = () => {
     setSubmitError(null);
     
     try {
+      // Calculate the date for the selected month/year
+      // Set to the first day of the selected month at noon to avoid timezone issues
+      const monthNumber = new Date(Date.parse(selectedMonth + " 1, 2000")).getMonth();
+      const reviewDate = new Date(selectedYear, monthNumber, 1, 12, 0, 0);
+      const reviewDateISO = reviewDate.toISOString();
+      
       // Submit each completed KPI review
       for (const [kpiId, data] of Object.entries(reviewData)) {
         if (data.met !== null && data.met !== undefined) {
@@ -498,12 +519,12 @@ const MonthlyReview: React.FC = () => {
           
           if (action === 'auto') {
             // Auto mode: Replace existing review for this month/year/KPI combination
-            const monthNumber = new Date(Date.parse(selectedMonth + " 1, 2000")).getMonth() + 1;
+            const monthNumberForSearch = new Date(Date.parse(selectedMonth + " 1, 2000")).getMonth() + 1;
             
             await ReviewService.replaceReviewForPeriod(
               clinician.id,
               kpiId,
-              monthNumber,
+              monthNumberForSearch,
               selectedYear,
               {
                 clinician: clinician.id,
@@ -513,7 +534,8 @@ const MonthlyReview: React.FC = () => {
                 notes: data.met ? undefined : data.notes,
                 plan: data.met ? undefined : data.plan,
                 score: score,
-                file_url: fileUrl
+                file_url: fileUrl,
+                date: reviewDateISO // Set the review date to the selected month/year
               }
             );
           } else if (action === 'update' && data.existingReviewId) {
@@ -524,7 +546,8 @@ const MonthlyReview: React.FC = () => {
               plan: data.met ? undefined : data.plan,
               score: score,
               file_url: fileUrl,
-              director: user?.id // Add director ID when updating
+              director: user?.id, // Add director ID when updating
+              date: reviewDateISO // Update the review date to the selected month/year
             });
           } else {
             // Create new review
@@ -536,7 +559,8 @@ const MonthlyReview: React.FC = () => {
               notes: data.met ? undefined : data.notes,
               plan: data.met ? undefined : data.plan,
               score: score,
-              file_url: fileUrl
+              file_url: fileUrl,
+              date: reviewDateISO // Set the review date to the selected month/year
             });
           }
         }
