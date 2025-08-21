@@ -18,6 +18,8 @@ import PermissionManagement from './pages/PermissionManagement';
 import ClinicianProfile from './pages/ClinicianProfile';
 import ClinicianTypesManagement from './pages/ClinicianTypesManagement';
 import PositionManagement from './pages/PositionManagement';
+import DocumentManagement from './pages/DocumentManagement';
+import DirectorDocuments from './pages/DirectorDocuments';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -82,6 +84,11 @@ const AppContent: React.FC = () => {
             <MonthlyReview />
           </RoleBasedRoute>
         } />
+        <Route path="my-documents" element={
+          <RoleBasedRoute allowedRoles={['director']}>
+            <DirectorDocuments />
+          </RoleBasedRoute>
+        } />
 
         <Route path="users" element={
           <RoleBasedRoute allowedRoles={['super-admin']}>
@@ -101,6 +108,11 @@ const AppContent: React.FC = () => {
         <Route path="positions" element={
           <RoleBasedRoute allowedRoles={['super-admin']}>
             <PositionManagement />
+          </RoleBasedRoute>
+        } />
+        <Route path="documents" element={
+          <RoleBasedRoute allowedRoles={['super-admin', 'admin']}>
+            <DocumentManagement />
           </RoleBasedRoute>
         } />
         <Route path="security-settings" element={<SecuritySettingsPage />} />

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Upload Debug Tool</h1>
+    <p>This tool will help diagnose the 400 Bad Request error you're experiencing.</p>
+    
+    <div>
+        <input type="file" id="fileInput" accept=".pdf" />
+        <button onclick="runDiagnosis()">Run Upload Diagnosis</button>
+        <button onclick="testBucketOnly()">Test Bucket Configuration Only</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        // Import Supabase client
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+        
+        const supabaseUrl = 'https://iljbcbmebjeputawrqok.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsamJjYm1lYmplcHV0YXdycW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5OTUyMzYsImV4cCI6MjA2OTU3MTIzNn0.nHg76_vDGOSkDPb_qD3m0svvhfsy1oxAd54e4HCZYEk';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        window.supabase = supabase;
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testBucketConfiguration() {
+            addResult('🔍 Testing Bucket Configuration...', 'info');
+            
+            try {
+                // Test 1: List buckets
+                const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+                
+                if (bucketError) {
+                    addResult(`❌ Cannot list buckets: ${bucketError.message}`, 'error');
+                    return false;
+                }
+                
+                addResult(`✅ Found ${buckets.length} buckets: ${buckets.map(b => b.name).join(', ')}`, 'success');
+                
+                const reviewBucket = buckets.find(b => b.name === 'review-files');
+                if (!reviewBucket) {
+                    addResult('❌ review-files bucket not found!', 'error');
+                    return false;
+                }
+                
+                addResult(`✅ review-files bucket found. Public: ${reviewBucket.public}`, 'success');
+                
+                // Test 2: List files in bucket
+                const { data: files, error: listError } = await supabase.storage
+                    .from('review-files')
+                    .list('', { limit: 1 });
+                
+                if (listError) {
+                    addResult(`❌ Cannot list files: ${listError.message} (Status: ${listError.status})`, 'error');
+                    if (listError.status === 400) {
+                        addResult('🚨 This 400 error suggests bucket access issues!', 'error');
+                    }
+                    return false;
+                }
+                
+                addResult(`✅ Can list files in bucket. Found ${files?.length || 0} items`, 'success');
+                
+                // Test 3: Check URL structure
+                const { data: urlData } = supabase.storage
+                    .from('review-files')
+                    .getPublicUrl('test-path.pdf');
+                
+                addResult(`Generated URL: ${urlData.publicUrl}`, 'info');
+                
+                if (urlData.publicUrl.includes('/object/public/')) {
+                    addResult('✅ URL contains /object/public/ - correct format', 'success');
+                } else {
+                    addResult('⚠️ URL missing /object/public/ - bucket may not be public', 'error');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                addResult(`❌ Bucket test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testUpload(file) {
+            addResult('🔍 Testing Direct Upload...', 'info');
+            
+            const timestamp = Date.now();
+            const randomString = Math.random().toString(36).substring(2, 15);
+            const fileExtension = file.name.split('.').pop() || 'pdf';
+            const fileName = `debug-test/${timestamp}_${randomString}.${fileExtension}`;
+            
+            addResult(`Attempting upload with fileName: ${fileName}`, 'info');
+            
+            try {
+                const { data, error } = await supabase.storage
+                    .from('review-files')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false,
+                        contentType: file.type
+                    });
+                
+                if (error) {
+                    addResult(`❌ Upload failed: ${error.message}`, 'error');
+                    addResult(`Error details: ${JSON.stringify(error, null, 2)}`, 'error');
+                    return false;
+                }
+                
+                addResult(`✅ Upload successful: ${JSON.stringify(data)}`, 'success');
+                
+                // Clean up
+                await supabase.storage.from('review-files').remove([fileName]);
+                addResult('✅ Test file cleaned up', 'success');
+                
+                return true;
+                
+            } catch (error) {
+                addResult(`❌ Upload exception: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        window.testBucketOnly = async function() {
+            clearResults();
+            await testBucketConfiguration();
+        };
+        
+        window.runDiagnosis = async function() {
+            clearResults();
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                addResult('❌ Please select a PDF file first', 'error');
+                return;
+            }
+            
+            if (file.type !== 'application/pdf') {
+                addResult('❌ Please select a PDF file', 'error');
+                return;
+            }
+            
+            addResult(`Selected file: ${file.name} (${file.size} bytes)`, 'info');
+            addResult('🚀 Starting diagnosis...', 'info');
+            
+            // Test bucket configuration
+            const bucketOk = await testBucketConfiguration();
+            addResult('', 'info'); // spacer
+            
+            // Test upload
+            const uploadOk = await testUpload(file);
+            addResult('', 'info'); // spacer
+            
+            // Summary
+            addResult('=== DIAGNOSIS COMPLETE ===', 'info');
+            addResult(`Bucket Configuration: ${bucketOk ? '✅ OK' : '❌ FAILED'}`, bucketOk ? 'success' : 'error');
+            addResult(`Upload Test: ${uploadOk ? '✅ OK' : '❌ FAILED'}`, uploadOk ? 'success' : 'error');
+            
+            if (!bucketOk) {
+                addResult('🔧 SOLUTION: The bucket is not configured correctly. Check Supabase dashboard.', 'error');
+            } else if (!uploadOk) {
+                addResult('🔧 SOLUTION: Bucket is OK but upload fails. This suggests RLS policy or authentication issues.', 'error');
+            } else {
+                addResult('🎉 Everything works! The issue might be intermittent or environment-specific.', 'success');
+            }
+        };
+    </script>
+</body>
+</html>
