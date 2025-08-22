@@ -17,7 +17,7 @@ import MonthYearPicker from '../components/UI/MonthYearPicker';
 
 const DocumentManagement: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
-  const [directors, setDirectors] = useState<Array<{id: string, name: string}>>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -40,7 +40,6 @@ const DocumentManagement: React.FC = () => {
   // Form states
   const [selectedMonth, setSelectedMonth] = useState<string>(getMonthName(new Date().getMonth() + 1));
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedDirector, setSelectedDirector] = useState<string>('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
@@ -49,41 +48,31 @@ const DocumentManagement: React.FC = () => {
   // Filter states
   const [filterMonth, setFilterMonth] = useState<string>(getMonthName(new Date().getMonth() + 1));
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
-  const [filterDirector, setFilterDirector] = useState<string>('');
   const [filterPickerOpen, setFilterPickerOpen] = useState(false);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   useEffect(() => {
-    fetchDirectors();
     fetchDocuments();
-  }, [filterMonth, filterYear, filterDirector]);
+  }, [filterMonth, filterYear]);
 
-  const fetchDirectors = async () => {
-    try {
-      const directorsData = await DocumentService.getDirectors();
-      setDirectors(directorsData);
-    } catch (error) {
-      console.error('Error fetching directors:', error);
-    }
-  };
+  // Director list no longer needed (global view by month)
+  // const fetchDirectors = async () => {
+  //   try {
+  //     const directorsData = await DocumentService.getDirectors();
+  //     setDirectors(directorsData);
+  //   } catch (error) {
+  //     console.error('Error fetching directors:', error);
+  //   }
+  // };
 
   const fetchDocuments = async () => {
     setLoading(true);
     setError(null);
     try {
-      let documentsData;
       const filterMonthNumber = getMonthNumber(filterMonth);
-      if (filterDirector) {
-        documentsData = await DocumentService.getDocumentsByMonthAndDirector(
-          filterMonthNumber,
-          filterYear,
-          filterDirector
-        );
-      } else {
-        documentsData = await DocumentService.getDocumentsByMonth(filterMonthNumber, filterYear);
-      }
+      const documentsData = await DocumentService.getDocumentsByMonth(filterMonthNumber, filterYear);
       setDocuments(documentsData);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch documents');
@@ -93,8 +82,8 @@ const DocumentManagement: React.FC = () => {
   };
 
   const handleFileUpload = async () => {
-    if (!uploadFile || !selectedDirector) {
-      setError('Please select a file and director');
+    if (!uploadFile) {
+      setError('Please select a file');
       return;
     }
 
@@ -111,13 +100,12 @@ const DocumentManagement: React.FC = () => {
       
       await DocumentService.uploadDocument(
         uploadFile,
-        selectedDirector,
         selectedMonthNumber,
-        selectedYear
+        selectedYear,
+        null
       );
       setSuccess('Document uploaded successfully');
       setUploadFile(null);
-      setSelectedDirector('');
       fetchDocuments();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to upload document');
@@ -225,22 +213,6 @@ const DocumentManagement: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Director</label>
-              <select
-                value={selectedDirector}
-                onChange={(e) => setSelectedDirector(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Director</option>
-                {directors.map((director) => (
-                  <option key={director.id} value={director.id}>
-                    {director.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">File</label>
               <input
                 type="file"
@@ -253,7 +225,7 @@ const DocumentManagement: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={handleFileUpload}
-              disabled={!uploadFile || !selectedDirector || uploading}
+              disabled={!uploadFile || uploading}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Upload className="w-4 h-4" />
@@ -286,22 +258,6 @@ const DocumentManagement: React.FC = () => {
                 onToggle={() => setFilterPickerOpen(!filterPickerOpen)}
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Director</label>
-              <select
-                value={filterDirector}
-                onChange={(e) => setFilterDirector(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Directors</option>
-                {directors.map((director) => (
-                  <option key={director.id} value={director.id}>
-                    {director.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
@@ -309,7 +265,6 @@ const DocumentManagement: React.FC = () => {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Documents for {filterMonth} {filterYear}
-            {filterDirector && ` - ${directors.find(d => d.id === filterDirector)?.name}`}
             {!loading && ` (${documents.length})`}
           </h2>
 

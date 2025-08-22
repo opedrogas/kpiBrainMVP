@@ -16,7 +16,7 @@ export interface CreateDocumentData {
   date: string;
   file_url: string;
   file_name: string;
-  director: string;
+  director?: string | null;
 }
 
 export interface UpdateDocumentData {
@@ -48,9 +48,9 @@ export class DocumentService {
    */
   static async uploadDocument(
     file: File,
-    directorId: string,
     month: number,
-    year: number
+    year: number,
+    directorId?: string | null
   ): Promise<DocumentMetadata> {
     try {
       // Enhanced file validation
@@ -65,7 +65,8 @@ export class DocumentService {
       const timestamp = Date.now();
       const randomString = Math.random().toString(36).substring(2, 15);
       const fileExtension = file.name.split('.').pop() || 'pdf';
-      const fileName = `${year}_${month}_${directorId}_${timestamp}_${randomString}.${fileExtension}`;
+      const dirSegment = directorId ? `${directorId}_` : '';
+      const fileName = `${year}_${month}_${dirSegment}${timestamp}_${randomString}.${fileExtension}`;
       
       // Determine content type with safe fallback
       const contentType = (file && typeof file.type === 'string' && file.type.trim().length > 0)
@@ -257,8 +258,8 @@ export class DocumentService {
       throw new Error(`Failed to fetch documents: ${error.message}`);
     }
 
-    // Filter by director's accept status in the application layer
-    const filteredData = data?.filter(doc => doc.director_profile?.accept === true) || [];
+    // Include global documents (no director) and those with accepted directors
+    const filteredData = data?.filter(doc => doc.director === null || doc.director_profile?.accept === true) || [];
     return filteredData;
   }
 
