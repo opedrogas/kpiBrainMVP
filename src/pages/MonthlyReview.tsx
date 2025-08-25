@@ -13,7 +13,7 @@ import { AIImprovementService } from '../services/aiAnalysisService';
 interface ReviewFormData {
   [kpiId: string]: {
     met: boolean | null;
-    reviewDate?: string;
+    reviewDate?: string; // note_date - specific date when KPI was marked as not met
     notes?: string;
     plan?: string;
     files?: File[];
@@ -68,7 +68,7 @@ const MonthlyReview: React.FC = () => {
       reviews.forEach(review => {
         formData[review.kpi] = {
           met: review.met_check,
-          reviewDate: review.date ? new Date(review.date).toISOString().split('T')[0] : undefined,
+          reviewDate: review.note_date ? new Date(review.note_date).toISOString().split('T')[0] : undefined,
           notes: review.notes || undefined,
           plan: review.plan || undefined,
           files: [],
@@ -115,7 +115,7 @@ const MonthlyReview: React.FC = () => {
       Object.values(recentReviewsByKPI).forEach(review => {
         formData[review.kpi] = {
           met: review.met_check,
-          reviewDate: review.date ? new Date(review.date).toISOString().split('T')[0] : undefined,
+          reviewDate: review.note_date ? new Date(review.note_date).toISOString().split('T')[0] : undefined,
           notes: review.notes || undefined,
           plan: review.plan || undefined,
           files: [],
@@ -535,7 +535,8 @@ const MonthlyReview: React.FC = () => {
                 plan: data.met ? undefined : data.plan,
                 score: score,
                 file_url: fileUrl,
-                date: reviewDateISO // Set the review date to the selected month/year
+                date: reviewDateISO, // Set the review date to the selected month/year
+                note_date: (!data.met && data.reviewDate) ? data.reviewDate : undefined // Set note_date when KPI not met
               }
             );
           } else if (action === 'update' && data.existingReviewId) {
@@ -547,7 +548,8 @@ const MonthlyReview: React.FC = () => {
               score: score,
               file_url: fileUrl,
               director: user?.id, // Add director ID when updating
-              date: reviewDateISO // Update the review date to the selected month/year
+              date: reviewDateISO, // Update the review date to the selected month/year
+              note_date: (!data.met && data.reviewDate) ? data.reviewDate : undefined // Set note_date when KPI not met
             });
           } else {
             // Create new review
@@ -560,7 +562,8 @@ const MonthlyReview: React.FC = () => {
               plan: data.met ? undefined : data.plan,
               score: score,
               file_url: fileUrl,
-              date: reviewDateISO // Set the review date to the selected month/year
+              date: reviewDateISO, // Set the review date to the selected month/year
+              note_date: (!data.met && data.reviewDate) ? data.reviewDate : undefined // Set note_date when KPI not met
             });
           }
         }

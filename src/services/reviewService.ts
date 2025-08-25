@@ -9,7 +9,8 @@ export interface ReviewItem {
   notes?: string; // if not met
   plan?: string; // if not met
   score: number; // weight or 0
-  date: string; // creation timestamp
+  date: string; // selected month when director creates review
+  note_date?: string; // specific date when KPI was marked as not met (only when met_check=false)
   file_url?: string; // URL to uploaded file in Supabase Storage
 }
 
@@ -21,6 +22,8 @@ export interface CreateReviewItemData {
   notes?: string;
   plan?: string;
   score: number;
+  date?: string; // selected month when director creates review
+  note_date?: string; // specific date when KPI was marked as not met (only when met_check=false)
   file_url?: string;
 }
 
@@ -29,6 +32,8 @@ export interface UpdateReviewItemData {
   notes?: string;
   plan?: string;
   score?: number;
+  date?: string; // selected month when director creates review
+  note_date?: string; // specific date when KPI was marked as not met (only when met_check=false)
   file_url?: string;
   director?: string; // UUID reference to profiles(id) - director who updated the review
 }
@@ -52,6 +57,11 @@ export class ReviewService {
     // If a custom date is provided, use it; otherwise let the database use the default (current timestamp)
     if (reviewData.date) {
       insertData.date = reviewData.date;
+    }
+
+    // If note_date is provided (when KPI is not met), include it
+    if (reviewData.note_date) {
+      insertData.note_date = reviewData.note_date;
     }
 
     const { data, error } = await supabase
@@ -172,6 +182,7 @@ export class ReviewService {
     if (reviewData.file_url !== undefined) updateData.file_url = reviewData.file_url;
     if (reviewData.director !== undefined) updateData.director = reviewData.director;
     if (reviewData.date !== undefined) updateData.date = reviewData.date;
+    if (reviewData.note_date !== undefined) updateData.note_date = reviewData.note_date;
 
     const { data, error } = await supabase
       .from('review_items')
@@ -268,6 +279,8 @@ export class ReviewService {
         notes: item.notes || null,
         plan: item.plan || null,
         score: item.score,
+        date: item.date || null,
+        note_date: item.note_date || null,
         file_url: item.file_url || null,
       })))
       .select();
@@ -335,7 +348,8 @@ export class ReviewService {
     directorId: string | undefined,
     month: string, // Month name like "January"
     year: number,
-    reviewData: Omit<CreateReviewItemData, 'clinician' | 'kpi' | 'director' | 'date'>
+    reviewData: Omit<CreateReviewItemData, 'clinician' | 'kpi' | 'director' | 'date'>,
+    noteDate?: string // specific date when KPI was marked as not met (only when met_check=false)
   ): Promise<ReviewItem> {
     // Calculate the date for the first day of the specified month at noon
     const monthNumber = new Date(Date.parse(month + " 1, 2000")).getMonth();
@@ -352,7 +366,8 @@ export class ReviewService {
       clinician: clinicianId,
       kpi: kpiId,
       director: directorId,
-      date: reviewDateISO
+      date: reviewDateISO,
+      note_date: noteDate
     });
   }
 

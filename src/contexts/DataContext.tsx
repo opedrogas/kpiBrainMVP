@@ -821,7 +821,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         month: new Date(r.date).toLocaleString('default', { month: 'long' }),
         year: new Date(r.date).getFullYear(),
         met: r.met_check,
-        reviewDate: r.met_check ? undefined : r.date,
+        reviewDate: r.met_check ? undefined : r.note_date,
         notes: r.notes,
         plan: r.plan,
         files: r.file_url ? [r.file_url] : undefined,

@@ -952,6 +952,21 @@ export const generateMonthlyDataPDF = (
           doc.setTextColor(0, 0, 0); // Reset to black
           yPosition += 12;
           
+          // Issue date for not met KPIs
+          if (!review.met && review.reviewDate) {
+            doc.setFontSize(9);
+            doc.setTextColor(200, 0, 0); // Red color for issue date
+            const issueDate = new Date(review.reviewDate).toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+            doc.text(`Issue Date: ${issueDate}`, margin + 10, yPosition);
+            doc.setTextColor(0, 0, 0); // Reset to black
+            yPosition += 12;
+          }
+          
           // Notes with text wrapping
           if (review.notes && review.notes.trim()) {
             doc.setFontSize(9);

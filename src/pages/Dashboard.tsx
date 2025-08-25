@@ -190,22 +190,22 @@ const Dashboard: React.FC = () => {
     const targetClinicians = user?.role === 'super-admin' ? userCliniciansOnly : userClinicians;
     return targetClinicians.filter(c => {
       const score = c.position_info?.role === 'director' 
-        ? getDirectorAverageScore(c.id, selectedMonth, selectedYear)
+        ? getClinicianScore(c.id, selectedMonth, selectedYear)
         : getClinicianScore(c.id, selectedMonth, selectedYear);
       return score < 70;
     });
-  }, [user?.role, userCliniciansOnly, userClinicians, selectedMonth, selectedYear, getDirectorAverageScore, getClinicianScore]);
+  }, [user?.role, userCliniciansOnly, userClinicians, selectedMonth, selectedYear,  getClinicianScore]);
 
   // Memoized top performers (score >= 90)
   const topPerformers = useMemo(() => {
     const targetClinicians = user?.role === 'super-admin' ? userCliniciansOnly : userClinicians;
     return targetClinicians.filter(c => {
       const score = c.position_info?.role === 'director' 
-        ? getDirectorAverageScore(c.id, selectedMonth, selectedYear)
+        ? getClinicianScore(c.id, selectedMonth, selectedYear)
         : getClinicianScore(c.id, selectedMonth, selectedYear);
       return score >= 90;
     });
-  }, [user?.role, userCliniciansOnly, userClinicians, selectedMonth, selectedYear, getDirectorAverageScore, getClinicianScore]);
+  }, [user?.role, userCliniciansOnly, userClinicians, selectedMonth, selectedYear,  getClinicianScore]);
 
   // Helper function to filter reviews based on user role and assigned clinicians
   const filterReviewsByUserRole = (reviews: any[]) => {
@@ -1046,6 +1046,11 @@ const Dashboard: React.FC = () => {
                       {hasData && (
                         <div className="mt-2 text-xs text-gray-500">
                           Reviewed on {new Date(review!.date).toLocaleDateString()}
+                          {!review?.met_check && review?.note_date && (
+                            <span className="ml-2 text-red-600">
+                              • Issue noted on {new Date(review.note_date).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1055,6 +1060,23 @@ const Dashboard: React.FC = () => {
                       <div className="border-t border-gray-200 bg-gray-50 p-3 sm:p-4">
                         {!review?.met_check && (
                           <div className="space-y-4">
+                            {review?.note_date && (
+                              <div>
+                                <div className="flex items-center space-x-1 mb-2">
+                                  <Calendar className="w-4 h-4 text-red-600" />
+                                  <span className="text-xs sm:text-sm font-medium text-gray-700">Issue Date:</span>
+                                </div>
+                                <p className="text-xs sm:text-sm text-gray-600 bg-red-50 p-3 rounded border-l-4 border-red-200">
+                                  {new Date(review.note_date).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                  })}
+                                </p>
+                              </div>
+                            )}
+                            
                             {review?.notes && (
                               <div>
                                 <div className="flex items-center space-x-1 mb-2">

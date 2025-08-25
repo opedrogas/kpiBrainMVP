@@ -58,7 +58,7 @@ const DirectorDocuments: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Documents</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">KPI Library</h1>
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
@@ -71,7 +71,7 @@ const DirectorDocuments: React.FC = () => {
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Search className="w-5 h-5" />
-            Filter Documents
+            Filter KPI Library
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
@@ -95,19 +95,19 @@ const DirectorDocuments: React.FC = () => {
         {/* Documents List */}
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Documents for {filterMonth} {filterYear}
+          KPI Library for {filterMonth} {filterYear}
             {!loading && ` (${documents.length})`}
           </h2>
 
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading documents...</p>
+              <p className="text-gray-500 mt-2">Loading KPI Library...</p>
             </div>
           ) : documents.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <File className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>No documents found for the selected month</p>
+              <p>No KPI Library found for the selected month</p>
             </div>
           ) : (
             <div className="grid gap-4">
