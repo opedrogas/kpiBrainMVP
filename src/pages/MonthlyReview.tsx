@@ -456,7 +456,7 @@ const MonthlyReview: React.FC = () => {
       existingReviews.forEach(review => {
         reviewDataForPDF[review.kpi] = {
           met: review.met_check,
-          reviewDate: review.review_date,
+          reviewDate: review.note_date,
           notes: review.notes,
           plan: review.plan
         };
@@ -807,10 +807,10 @@ const MonthlyReview: React.FC = () => {
                   
                   {review && (
                     <div className="space-y-3 pt-3 border-t border-gray-200">
-                      {review.review_date && (
+                      {review.note_date && (
                         <div>
-                          <span className="text-sm font-medium text-gray-700">Review Date: </span>
-                          <span className="text-sm text-gray-600">{new Date(review.review_date).toLocaleDateString()}</span>
+                          <span className="text-sm font-medium text-gray-700">Issue Date: </span>
+                          <span className="text-sm text-gray-600">{new Date(review.note_date).toLocaleDateString()}</span>
                         </div>
                       )}
                       {review.notes && (
@@ -1058,7 +1058,7 @@ const MonthlyReview: React.FC = () => {
                       <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                           <Calendar className="w-4 h-4 inline mr-1" />
-                          Review Date {!isMyReviewsMode && '*'}
+                          Issue Date {!isMyReviewsMode && '*'}
                           {isMyReviewsMode && (
                             <span className="text-xs text-gray-500 ml-2">(Set by supervisor)</span>
                           )}
@@ -1078,8 +1078,8 @@ const MonthlyReview: React.FC = () => {
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           {isMyReviewsMode 
-                            ? 'Date when this KPI was discussed with you'
-                            : 'Date when this KPI was discussed with the clinician'
+                            ? 'Date when this KPI issue was noted'
+                            : 'Date when this KPI issue was observed'
                           }
                         </p>
                       </div>

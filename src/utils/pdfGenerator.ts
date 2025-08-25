@@ -70,13 +70,12 @@ export const generateReviewPDF = (
 
   // Score Summary Box
   doc.setFillColor(59, 130, 246, 0.1);
-  doc.rect(margin, 120, pageWidth - (margin * 2), 25, 'F');
   doc.setFontSize(12);
   doc.setTextColor(59, 130, 246);
-  doc.text(`Performance Score: ${score}%`, margin + 10, 135);
+  doc.text(`Performance Score: ${score}%`, margin, 115);
   
   const scoreLabel = score >= 90 ? 'Excellent' : score >= 80 ? 'Good' : score >= 70 ? 'Average' : 'Needs Improvement';
-  doc.text(`Rating: ${scoreLabel}`, margin + 10, 142);
+  doc.text(`Rating: ${scoreLabel}`, margin, 125);
 
   // KPI Details Table
   let yPosition = 160;
@@ -177,7 +176,7 @@ export const generateReviewPDF = (
       doc.setTextColor(0, 0, 0);
       
       if (kpiData?.reviewDate) {
-        doc.text(`Review Date: ${new Date(kpiData.reviewDate).toLocaleDateString()}`, margin + 10, currentY);
+        doc.text(`Issue Date: ${new Date(kpiData.reviewDate).toLocaleDateString()}`, margin + 10, currentY);
         currentY += 8;
       }
 
