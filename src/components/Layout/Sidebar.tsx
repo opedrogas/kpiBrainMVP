@@ -28,6 +28,8 @@ const Sidebar: React.FC = () => {
     if (user?.role === 'clinician') {
       return [
         { name: 'Dashboard', href: '/', icon: BarChart3, roles: ['clinician'] },
+        { name: 'Blogs', href: '/blogs', icon: FileText, roles: ['clinician'] },
+        // { name: 'Security Settings', href: '/security-settings', icon: Settings, roles: ['clinician'] },
       ];
     }
     
@@ -38,6 +40,8 @@ const Sidebar: React.FC = () => {
       { name: 'My Reviews', href: '/my-reviews', icon: ClipboardList, roles: ['director'] },
       { name: 'My KPI Library', href: '/my-documents', icon: Folder, roles: ['director'] },
       { name: 'KPI Library', href: '/documents', icon: FileText, roles: ['super-admin', 'admin'] },
+      { name: 'Blogs', href: '/blogs', icon: FileText, roles: ['director', 'clinician'] },
+      { name: 'Blog Management', href: '/blogs/manage', icon: FileText, roles: ['super-admin','admin'] },
       { name: 'Assign Director', href: '/assign-director', icon: UserCheck, roles: ['super-admin'] },
       { name: 'Clinician Types', href: '/clinician-types', icon: Tag, roles: ['super-admin'] },
       { name: 'Positions', href: '/positions', icon: Briefcase, roles: ['super-admin'] },

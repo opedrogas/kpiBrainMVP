@@ -37,7 +37,7 @@ const EnhancedSelect: React.FC<EnhancedSelectProps> = ({
   options,
   placeholder = "Select an option...",
   disabled = false,
-  size = 'md',
+  size = 'sm',
   variant = 'default',
   error = false,
   icon,

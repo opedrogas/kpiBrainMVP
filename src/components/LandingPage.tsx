@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Activity, BarChart3, Users, Target, TrendingUp, CheckCircle, ArrowRight, Star, Shield, Zap, AlertTriangle, MessageSquare, FileX, ArrowDown, Check, X, FileText, BarChart, ClipboardCheck, TrendingDown, Clock, UserCheck, Heart, Award, Lock, Send, Mail } from 'lucide-react';
 import AuthModal from './AuthModal';
 import { useNameFormatter } from '../utils/nameFormatter';
+import BlogService, { Blog } from '../services/blogService';
 
 const LandingPage: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -17,6 +18,43 @@ const LandingPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Landing blogs state
+  const [landingBlogs, setLandingBlogs] = useState<Blog[]>([]);
+  const [blogsError, setBlogsError] = useState<string | null>(null);
+  const [blogsLoading, setBlogsLoading] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        setBlogsLoading(true);
+        setBlogsError(null);
+        const data = await BlogService.getByPosition('landing');
+        if (isMounted) setLandingBlogs(data);
+      } catch (e) {
+        if (isMounted) setBlogsError(e instanceof Error ? e.message : 'Failed to load blogs');
+      } finally {
+        if (isMounted) setBlogsLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Blog carousel (3 visible at a time, auto-advance by 1)
+  const [blogIndex, setBlogIndex] = useState(0);
+  React.useEffect(() => {
+    if (!landingBlogs.length) return;
+    const timer = setInterval(() => {
+      setBlogIndex((prev) => (prev + 1) % landingBlogs.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [landingBlogs.length]);
+  const visibleBlogs: Blog[] = landingBlogs.length
+    ? Array.from({ length: Math.min(3, landingBlogs.length) }, (_, i) =>
+        landingBlogs[(blogIndex + i) % landingBlogs.length]
+      )
+    : [];
 
   const features = [
     {
@@ -453,6 +491,88 @@ ${contactForm.message}
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Blogs Section (between Solution and Features) */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center px-4 py-2 bg-purple-100 rounded-full text-purple-800 text-sm font-medium mb-6">
+              <Star className="w-4 h-4 mr-2" />
+              Latest Insights
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">From the KPI Brain Blog</h2>
+            <p className="text-gray-600">Thoughts and guidance on performance management for clinical teams</p>
+          </div>
+
+          {/* Loading / Error */}
+          {blogsLoading && (
+            <div className="text-center py-10 text-gray-500">Loading posts...</div>
+          )}
+          {(!blogsLoading && blogsError) && (
+            <div className="text-center py-10 text-red-600">{blogsError}</div>
+          )}
+
+          {/* Rotating row - shows 3, auto-advances, fade effect */}
+          {!blogsLoading && !blogsError && visibleBlogs.length > 0 && (
+            <div>
+              <style>{`
+                @keyframes blogFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+                .blog-fade { animation: blogFadeUp 450ms ease-out both; }
+              `}</style>
+
+              {/* Dots */}
+              <div className="flex justify-center mb-6 space-x-2">
+                {landingBlogs.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setBlogIndex(i)}
+                    className={`h-2 rounded-full transition-all duration-300 ${i === blogIndex ? 'bg-purple-600 w-8' : 'bg-gray-300 w-2'}`}
+                    aria-label={`Go to blog ${i + 1}`}
+                  />
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 blog-fade">
+                {visibleBlogs.map((post) => (
+                  <article
+                    key={post.id}
+                    className="group relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:-rotate-1 hover:shadow-2xl border border-blue-100 will-change-transform"
+                  >
+                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                      <Star className="w-4 h-4 text-white" />
+                    </div>
+
+                    <div className="flex items-start space-x-4 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <header>
+                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors break-words">
+                          {post.title}
+                        </h3>
+                        {post.created_at && (
+                          <div className="text-xs text-gray-400 mt-1">
+                            {new Date(post.created_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </header>
+                    </div>
+
+                    {post.description && (
+                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-4">{post.description}</p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!blogsLoading && !blogsError && landingBlogs.length === 0 && (
+            <div className="text-center py-10 text-gray-500">No posts yet.</div>
+          )}
         </div>
       </section>
 

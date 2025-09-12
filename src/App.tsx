@@ -4,8 +4,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout/Layout';
-import LandingPage from './components/LandingPage';
+import AuthPage from './pages/Auth';
 import PendingApproval from './components/PendingApproval';
+import LandingPage from './components/LandingPage';
+
 
 import Dashboard from './pages/Dashboard';
 import KPIManagement from './pages/KPIManagement';
@@ -26,6 +28,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import SecuritySettingsPage from './pages/SecuritySettings';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import BlogManagement from './pages/BlogManagement';
+import UserBlogs from './pages/UserBlogs';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isPendingApproval, user } = useAuth();
@@ -45,6 +49,7 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
+            <Route path="blogs" element={<UserBlogs />} />
             <Route path="security-settings" element={<SecuritySettingsPage />} />
             <Route path="*" element={<Dashboard />} />
           </Route>
@@ -89,6 +94,11 @@ const AppContent: React.FC = () => {
             <DirectorDocuments />
           </RoleBasedRoute>
         } />
+        <Route path="blogs" element={
+          <RoleBasedRoute allowedRoles={['director', 'clinician']}>
+            <UserBlogs />
+          </RoleBasedRoute>
+        } />
 
         <Route path="users" element={
           <RoleBasedRoute allowedRoles={['super-admin']}>
@@ -113,6 +123,11 @@ const AppContent: React.FC = () => {
         <Route path="documents" element={
           <RoleBasedRoute allowedRoles={['super-admin', 'admin']}>
             <DocumentManagement />
+          </RoleBasedRoute>
+        } />
+        <Route path="blogs/manage" element={
+          <RoleBasedRoute allowedRoles={['super-admin', 'admin']}>
+            <BlogManagement />
           </RoleBasedRoute>
         } />
         <Route path="security-settings" element={<SecuritySettingsPage />} />
