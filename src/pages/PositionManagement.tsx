@@ -50,7 +50,7 @@ const PositionManagement: React.FC = () => {
     };
 
     checkUserRole();
-  }, [user, navigate]);
+  }, [user]);
 
   useEffect(() => {
     if (searchTerm) {

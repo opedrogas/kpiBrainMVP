@@ -4,7 +4,8 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { SidebarProvider, useSidebar } from '../../contexts/SidebarContext';
 
-const LayoutContent: React.FC = () => {
+// Accept children so Next.js pages can render their content inside the layout
+const LayoutContent: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { isCollapsed, isMobile, closeSidebar } = useSidebar();
 
   return (
@@ -25,17 +26,18 @@ const LayoutContent: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+          {/* Prefer children (Next.js pages) but fallback to Outlet (React Router) */}
+          {children ?? <Outlet />}
         </main>
       </div>
     </div>
   );
 };
 
-const Layout: React.FC = () => {
+const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
     <SidebarProvider>
-      <LayoutContent />
+      <LayoutContent>{children}</LayoutContent>
     </SidebarProvider>
   );
 };

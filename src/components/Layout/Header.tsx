@@ -166,6 +166,7 @@ const Header: React.FC = () => {
                       onClick={() => {
                         logout();
                         setShowMobileNav(false);
+                        navigate('/');
                       }}
                       className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                     >
@@ -224,7 +225,10 @@ const Header: React.FC = () => {
           </button>
           
           <button
-            onClick={logout}
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
             className="p-2 text-gray-400 hover:text-red-500 transition-colors"
             title="Logout"
           >

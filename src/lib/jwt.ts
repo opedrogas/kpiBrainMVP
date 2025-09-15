@@ -26,22 +26,25 @@ export interface TokenPair {
   expiresAt: number;
 }
 
-// Simple base64url encoding for demo
+// UTF-8 safe base64url helpers (work with non-ASCII payloads)
 function base64UrlEncode(str: string): string {
-  return btoa(str)
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary)
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 }
 
-// Simple base64url decoding for demo
 function base64UrlDecode(str: string): string {
   // Add padding
-  str = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (str.length % 4) {
-    str += '=';
-  }
-  return atob(str);
+  let input = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (input.length % 4) input += '=';
+  const binary = atob(input);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
 }
 
 // Simple JWT creation for demo purposes

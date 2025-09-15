@@ -41,9 +41,11 @@ export interface AIAnalysisResult {
 
 // Lightweight, UI-focused helper that returns a short 2–3 sentence plan
 export class AIImprovementService {
-  private static readonly API_ENDPOINT = import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
-  private static readonly API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-  private static readonly FORCE_SIMULATED = import.meta.env.VITE_FORCE_SIMULATED_AI === 'true';
+  // Read env from Vite (import.meta.env) or Next (process.env)
+  private static readonly API_ENDPOINT = (typeof process !== 'undefined' ? (process as any).env?.NEXT_PUBLIC_OPENAI_API_URL : undefined)
+    || 'https://api.openai.com/v1/chat/completions';
+  private static readonly API_KEY = (typeof process !== 'undefined' ? (process as any).env?.NEXT_PUBLIC_OPENAI_API_KEY : undefined);
+  private static readonly FORCE_SIMULATED = ((typeof process !== 'undefined' ? (process as any).env?.NEXT_PUBLIC_FORCE_SIMULATED_AI : undefined)) === 'true';
 
   /**
    * Generate a concise 2–3 sentence improvement plan with specific, actionable steps
