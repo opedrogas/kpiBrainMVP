@@ -9,7 +9,7 @@ interface Position {
   id: string;
   position_title: string;
   role: string;
-  created_at: string;
+  created_at?: string; // optional to match service type
 }
 
 interface ClinicianType {
@@ -148,26 +148,13 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      // Prepare user data based on role
-      const userData: any = {
-        name: formData.name,
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        position_id: formData.positionId,
-        department: formData.department,
-        start_date: formData.startDate
-      };
-
-      // Add role-specific data
-      if (selectedRole === 'director') {
-        userData.director_direction = formData.directorDirection;
-      } else if (selectedRole === 'clinician') {
-        userData.clinician_type_id = formData.clinicianTypeId;
-      }
-
-      // Register the user
-      const user = await signup(userData);
+      // Register the user (AuthContext expects username, password, name, role)
+      const user = await signup(
+        formData.username,
+        formData.password,
+        formData.name,
+        selectedRole as 'super-admin' | 'director' | 'clinician' | 'admin'
+      );
 
       // Save security question if enabled
       if (securityQuestion.enabled && user?.id) {
@@ -185,7 +172,7 @@ const Register: React.FC = () => {
     }
   };
 
-  const securityQuestions = SecurityQuestionService.getSecurityQuestions();
+  const securityQuestions = SecurityQuestionService.getExampleQuestions();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">

@@ -94,27 +94,28 @@ export class DocumentService {
       
       // Enhanced error logging
       if (error) {
+        // Avoid accessing non-existent typed properties on StorageError
         console.error('Upload error details:', {
-          error: error,
+          error,
           message: error.message,
-          status: error.status,
-          statusCode: error.statusCode,
-          fileName: fileName,
+          fileName,
           fileSize: file.size,
           fileType: file.type,
           resolvedContentType: contentType,
-          uploadOptions: uploadOptions
+          uploadOptions
         });
         
-        // Provide specific error messages for common 400 errors
+        // Provide specific error messages for common bad requests inferred from the message
         let errorMessage = `Failed to upload ${file.name}: ${error.message}`;
+        const msg = (error.message || '').toLowerCase();
+        const isBadRequest = msg.includes('400') || msg.includes('bad request');
         
-        if (error.status === 400 || error.statusCode === 400) {
-          if (error.message.includes('not found')) {
+        if (isBadRequest) {
+          if (msg.includes('not found')) {
             errorMessage = `Storage bucket '${this.BUCKET_NAME}' not found. Please check bucket configuration.`;
-          } else if (error.message.includes('duplicate')) {
+          } else if (msg.includes('duplicate')) {
             errorMessage = `File with similar name already exists. Please rename your file and try again.`;
-          } else if (error.message.includes('payload')) {
+          } else if (msg.includes('payload')) {
             errorMessage = `File upload failed due to invalid file format or corrupted file.`;
           } else {
             errorMessage = `Upload failed with error 400. File: ${file.name}, Size: ${this.formatFileSize(file.size)}`;

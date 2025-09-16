@@ -85,7 +85,8 @@ export class UploadFixImmediate {
       
       if (listError) {
         console.error('❌ Cannot list files in bucket:', listError);
-        if (listError.status === 400) {
+        const msg = (listError.message || '').toLowerCase();
+        if (msg.includes('400') || msg.includes('bad request')) {
           console.log('This 400 error suggests the bucket is not properly configured or accessible');
         }
         return false;

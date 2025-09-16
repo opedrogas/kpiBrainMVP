@@ -18,13 +18,13 @@ const PerformanceAnalytics: React.FC = () => {
     ? getAssignedClinicians(user.id)
     : [];
 
-  // Get unique departments
-  const departments = [...new Set(userClinicians.map(c => c.department))];
+  // Get unique departments from position title (Profile doesn't have department)
+  const departments = Array.from(new Set(userClinicians.map(c => c.position_info?.position_title || 'Unknown')));
 
-  // Filter by department
+  // Filter by department (using position title as grouping)
   const filteredClinicians = selectedDepartment === 'all' 
     ? userClinicians 
-    : userClinicians.filter(c => c.department === selectedDepartment);
+    : userClinicians.filter(c => (c.position_info?.position_title || 'Unknown') === selectedDepartment);
 
   // Generate trend data
   const generateTrendData = () => {
@@ -51,7 +51,7 @@ const PerformanceAnalytics: React.FC = () => {
 
   // Department performance
   const departmentPerformance = departments.map(dept => {
-    const deptClinicians = userClinicians.filter(c => c.department === dept);
+    const deptClinicians = userClinicians.filter(c => (c.position_info?.position_title || 'Unknown') === dept);
     const currentMonth = new Date().toLocaleString('default', { month: 'long' });
     const currentYear = new Date().getFullYear();
     

@@ -805,9 +805,49 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setClinicians(prev => prev.filter(c => c.id !== id));
   };
 
-  const submitReview = (review: Omit<ReviewEntry, 'id'>) => {
+  const submitReview = async (review: Omit<ReviewEntry, 'id'>): Promise<void> => {
     const newReview = { ...review, id: Date.now().toString() };
     setReviews(prev => [...prev, newReview]);
+  };
+
+  // Create/replace a KPI review for the current month
+  const submitKPIReview = async (
+    clinicianId: string,
+    kpiId: string,
+    met: boolean,
+    notes?: string,
+    plan?: string
+  ): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Determine score from KPI weight
+      const kpi = kpis.find(k => k.id === kpiId);
+      const score = met ? (kpi?.weight ?? 0) : 0;
+
+      // Use current month/year; ReviewService enforces current/previous month only
+      const now = new Date();
+      const monthName = now.toLocaleString('default', { month: 'long' });
+      const year = now.getFullYear();
+
+      await ReviewService.createReviewForPeriod(
+        clinicianId,
+        kpiId,
+        undefined, // directorId unknown in this context
+        monthName,
+        year,
+        { met_check: met, notes, plan, score }
+      );
+
+      // Refresh review items list
+      await refreshReviewItems();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit KPI review');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getClinicianReviews = (clinicianId: string) => {
@@ -1121,6 +1161,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addClinician,
       deleteClinician,
       submitReview,
+      submitKPIReview,
       getClinicianReviews,
       getClinicianScore,
       assignClinician,

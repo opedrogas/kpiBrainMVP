@@ -12,16 +12,18 @@ export const Navigate: React.FC<{ to: string; replace?: boolean }> = ({ to }) =>
   return null;
 };
 
-export const Outlet: React.FC = ({ children }) => {
+export const Outlet: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   // In Next.js we render children directly; existing Layout now accepts children
   return <>{children}</>;
 };
 
+type AnchorProps = Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className'>;
+
 export const LinkShim: React.FC<
-  { to: string; className?: string; children?: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>
-> = ({ to, children, ...rest }) => {
+  AnchorProps & { to: string; className?: string; children?: React.ReactNode }
+> = ({ to, children, className, ...rest }) => {
   return (
-    <Link href={to} {...rest}>
+    <Link href={to} {...rest} className={className}>
       {children as any}
     </Link>
   );
@@ -29,11 +31,11 @@ export const LinkShim: React.FC<
 
 // react-router-dom NavLink compatibility (supports className fn receiving { isActive })
 export const NavLink: React.FC<
-  {
+  AnchorProps & {
     to: string;
     className?: string | ((opts: { isActive: boolean; isPending?: boolean; isTransitioning?: boolean }) => string);
     children?: React.ReactNode;
-  } & React.AnchorHTMLAttributes<HTMLAnchorElement>
+  }
 > = ({ to, className, children, ...rest }) => {
   const router = useRouter();
   const asPath = typeof window === 'undefined' ? router.asPath || '' : window.location.pathname + window.location.search + window.location.hash;
@@ -69,6 +71,26 @@ export const useLocation = () => {
 };
 
 // Router placeholder (not used directly in Next.js)
-export const BrowserRouter = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-export const Routes = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-export const Route = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+// Accept common props to satisfy type-checking when using React Router APIs
+
+type BrowserRouterProps = { children: React.ReactNode };
+export const BrowserRouter: React.FC<BrowserRouterProps> = ({ children }) => <>{children}</>;
+
+type RoutesProps = { children: React.ReactNode };
+export const Routes: React.FC<RoutesProps> = ({ children }) => <>{children}</>;
+
+// Minimal Route props-compatible shim
+// Supports path, element, index, and children so TypeScript doesn't error
+// At runtime we simply render the provided element or children
+
+type RouteProps = {
+  path?: string;
+  element?: React.ReactNode;
+  index?: boolean;
+  caseSensitive?: boolean;
+  children?: React.ReactNode;
+};
+
+export const Route: React.FC<RouteProps> = ({ element, children }) => {
+  return <>{element ?? children ?? null}</>;
+};

@@ -3,7 +3,8 @@ export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^react-router-dom$': '<rootDir>/src/router-shim.tsx'
   },
   testMatch: [
     '<rootDir>/src/**/*.test.{js,jsx,ts,tsx}',

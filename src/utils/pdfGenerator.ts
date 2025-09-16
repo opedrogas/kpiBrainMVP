@@ -85,8 +85,8 @@ export const generateReviewPDF = (
 
   // Prepare table data
   const tableData = kpis.map(kpi => {
-    const kpiData = reviewData[kpi.id] || {};
-    const status = kpiData.met === true ? 'Met' : kpiData.met === false ? 'Not Met' : 'Not Reviewed';
+    const met = reviewData[kpi.id]?.met;
+    const status = met === true ? 'Met' : met === false ? 'Not Met' : 'Not Reviewed';
     const weight = `${kpi.weight}%`;
     const floor = kpi.floor || 'General'; // Use floor as category
     

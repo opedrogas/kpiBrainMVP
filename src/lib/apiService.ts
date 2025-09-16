@@ -38,9 +38,10 @@ export class APIService {
    */
   static async getAllProfiles() {
     return this.executeWithAuth(
-      () => supabase
-        .from('profiles')
-        .select(`
+      async () =>
+        await supabase
+          .from('profiles')
+          .select(`
           id,
           name,
           username,
@@ -62,9 +63,10 @@ export class APIService {
    */
   static async getUserProfile(userId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('profiles')
-        .select(`
+      async () =>
+        await supabase
+          .from('profiles')
+          .select(`
           id,
           name,
           username,
@@ -77,8 +79,8 @@ export class APIService {
             role
           )
         `)
-        .eq('id', userId)
-        .single(),
+          .eq('id', userId)
+          .single(),
       `Get User Profile (${userId})`
     );
   }
@@ -88,11 +90,12 @@ export class APIService {
    */
   static async updateUserApproval(userId: string, approved: boolean) {
     return this.executeWithAuth(
-      () => supabase
-        .from('profiles')
-        .update({ accept: approved })
-        .eq('id', userId)
-        .select(),
+      async () =>
+        await supabase
+          .from('profiles')
+          .update({ accept: approved })
+          .eq('id', userId)
+          .select(),
       `Update User Approval (${userId})`
     );
   }
@@ -102,10 +105,11 @@ export class APIService {
    */
   static async deleteUser(userId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId),
+      async () =>
+        await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId),
       `Delete User (${userId})`
     );
   }
@@ -115,10 +119,11 @@ export class APIService {
    */
   static async getKPIs() {
     return this.executeWithAuth(
-      () => supabase
-        .from('kpis')
-        .select('*')
-        .order('created_at', { ascending: true }),
+      async () =>
+        await supabase
+          .from('kpis')
+          .select('*')
+          .order('created_at', { ascending: true }),
       'Get KPIs'
     );
   }
@@ -128,11 +133,12 @@ export class APIService {
    */
   static async createKPI(kpiData: any) {
     return this.executeWithAuth(
-      () => supabase
-        .from('kpis')
-        .insert(kpiData)
-        .select()
-        .single(),
+      async () =>
+        await supabase
+          .from('kpis')
+          .insert(kpiData)
+          .select()
+          .single(),
       'Create KPI'
     );
   }
@@ -142,12 +148,13 @@ export class APIService {
    */
   static async updateKPI(kpiId: string, kpiData: any) {
     return this.executeWithAuth(
-      () => supabase
-        .from('kpis')
-        .update(kpiData)
-        .eq('id', kpiId)
-        .select()
-        .single(),
+      async () =>
+        await supabase
+          .from('kpis')
+          .update(kpiData)
+          .eq('id', kpiId)
+          .select()
+          .single(),
       `Update KPI (${kpiId})`
     );
   }
@@ -157,10 +164,11 @@ export class APIService {
    */
   static async deleteKPI(kpiId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('kpis')
-        .delete()
-        .eq('id', kpiId),
+      async () =>
+        await supabase
+          .from('kpis')
+          .delete()
+          .eq('id', kpiId),
       `Delete KPI (${kpiId})`
     );
   }
@@ -191,7 +199,7 @@ export class APIService {
     }
 
     return this.executeWithAuth(
-      () => query,
+      async () => await query,
       'Get Monthly Reviews'
     );
   }
@@ -201,11 +209,12 @@ export class APIService {
    */
   static async createMonthlyReview(reviewData: any) {
     return this.executeWithAuth(
-      () => supabase
-        .from('monthly_reviews')
-        .insert(reviewData)
-        .select()
-        .single(),
+      async () =>
+        await supabase
+          .from('monthly_reviews')
+          .insert(reviewData)
+          .select()
+          .single(),
       'Create Monthly Review'
     );
   }
@@ -215,12 +224,13 @@ export class APIService {
    */
   static async updateMonthlyReview(reviewId: string, reviewData: any) {
     return this.executeWithAuth(
-      () => supabase
-        .from('monthly_reviews')
-        .update(reviewData)
-        .eq('id', reviewId)
-        .select()
-        .single(),
+      async () =>
+        await supabase
+          .from('monthly_reviews')
+          .update(reviewData)
+          .eq('id', reviewId)
+          .select()
+          .single(),
       `Update Monthly Review (${reviewId})`
     );
   }
@@ -230,9 +240,10 @@ export class APIService {
    */
   static async getAssignedClinicians(directorId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('assign')
-        .select(`
+      async () =>
+        await supabase
+          .from('assign')
+          .select(`
           clinician,
           profiles!assign_clinician_fkey (
             id,
@@ -240,7 +251,7 @@ export class APIService {
             username
           )
         `)
-        .eq('director', directorId),
+          .eq('director', directorId),
       `Get Assigned Clinicians (${directorId})`
     );
   }
@@ -250,10 +261,11 @@ export class APIService {
    */
   static async assignClinician(directorId: string, clinicianId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('assign')
-        .insert({ director: directorId, clinician: clinicianId })
-        .select(),
+      async () =>
+        await supabase
+          .from('assign')
+          .insert({ director: directorId, clinician: clinicianId })
+          .select(),
       `Assign Clinician (${clinicianId} to ${directorId})`
     );
   }
@@ -263,11 +275,12 @@ export class APIService {
    */
   static async removeClinicianAssignment(directorId: string, clinicianId: string) {
     return this.executeWithAuth(
-      () => supabase
-        .from('assign')
-        .delete()
-        .eq('director', directorId)
-        .eq('clinician', clinicianId),
+      async () =>
+        await supabase
+          .from('assign')
+          .delete()
+          .eq('director', directorId)
+          .eq('clinician', clinicianId),
       `Remove Clinician Assignment (${clinicianId} from ${directorId})`
     );
   }

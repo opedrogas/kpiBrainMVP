@@ -175,21 +175,26 @@ export class UserService {
 
     // Combine all data
     const users: User[] = profiles.map(profile => {
+      // position_info may come as an array from the join; normalize to a single object
+      const positionInfo = Array.isArray(profile.position_info)
+        ? profile.position_info[0]
+        : profile.position_info;
+
       const user: User = {
         id: profile.id,
         name: profile.name,
         username: profile.username,
-        role: profile.position_info?.role || 'clinician',
+        role: positionInfo?.role || 'clinician',
         created_at: profile.created_at,
         accept: profile.accept || false,
         position_id: profile.position,
-        position_name: profile.position_info?.position_title
+        position_name: positionInfo?.position_title
       };
 
       // Add role-specific information
-      if (profile.position_info?.role === 'director' && directorsMap.has(profile.id)) {
+      if (positionInfo?.role === 'director' && directorsMap.has(profile.id)) {
         user.director_info = directorsMap.get(profile.id);
-      } else if (profile.position_info?.role === 'clinician' && cliniciansMap.has(profile.id)) {
+      } else if (positionInfo?.role === 'clinician' && cliniciansMap.has(profile.id)) {
         user.clinician_info = cliniciansMap.get(profile.id);
       }
 
@@ -229,20 +234,25 @@ export class UserService {
       return null;
     }
 
+    // Normalize position_info which may be an array from join
+    const positionInfo = Array.isArray(profile.position_info)
+      ? profile.position_info[0]
+      : profile.position_info;
+
     // Create the base user object
     const user: User = {
       id: profile.id,
       name: profile.name,
       username: profile.username,
-      role: profile.position_info?.role || 'clinician',
+      role: positionInfo?.role || 'clinician',
       created_at: profile.created_at,
       accept: profile.accept || false,
       position_id: profile.position,
-      position_name: profile.position_info?.position_title
+      position_name: positionInfo?.position_title
     };
 
     // Add role-specific information
-    if (profile.position_info?.role === 'director') {
+    if (positionInfo?.role === 'director') {
       const { data: director, error: directorError } = await supabase
         .from('director')
         .select('id, direction')
@@ -255,7 +265,7 @@ export class UserService {
           direction: director.direction
         };
       }
-    } else if (profile.position_info?.role === 'clinician') {
+    } else if (positionInfo?.role === 'clinician') {
       const { data: clinician, error: clinicianError } = await supabase
         .from('clician')
         .select('id, type')
@@ -741,8 +751,13 @@ export class UserService {
     };
 
     data.forEach(user => {
+      // position_info may be an array; normalize to the first entry
+      const positionInfo = Array.isArray(user.position_info)
+        ? user.position_info[0]
+        : user.position_info;
+
       // Count by role
-      const role = user.position_info?.role || 'unknown';
+      const role = positionInfo?.role || 'unknown';
       stats.byRole[role] = (stats.byRole[role] || 0) + 1;
       
       // Count by acceptance status

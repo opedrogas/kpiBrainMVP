@@ -78,7 +78,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onSwitchMode }) =>
         // If security question is enabled and signup was successful, save it
         if (enableSecurityQuestion && result?.id) {
           try {
-            await SecurityQuestionService.saveSecurityAnswer(result.id, {
+            await SecurityQuestionService.saveSecurityAnswer(result?.id, {
               question: customSecurityQuestion,
               answer: signupSecurityAnswer
             });

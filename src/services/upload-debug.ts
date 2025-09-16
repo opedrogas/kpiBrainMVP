@@ -79,15 +79,12 @@ export class UploadDebugger {
         });
         
       if (error) {
-        console.error('❌ Upload test failed:', {
-          error: error,
-          message: error.message,
-          status: error.status,
-          statusCode: error.statusCode
-        });
+        // Log full error without referencing non-existent typed properties
+        console.error('❌ Upload test failed:', error);
         
-        // Analyze the error
-        if (error.status === 400) {
+        // Analyze the error by inspecting the message
+        const msg = (error.message || '').toLowerCase();
+        if (msg.includes('400') || msg.includes('bad request')) {
           console.log('🔍 400 Error Analysis:');
           console.log('- This matches your reported error');
           console.log('- Possible causes:');

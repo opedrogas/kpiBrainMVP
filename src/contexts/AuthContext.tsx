@@ -18,7 +18,13 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string, name: string, role: 'super-admin' | 'director' | 'clinician' | 'admin') => Promise<void>;
+  // Return the created profile id so callers (e.g., AuthModal) can use it
+  signup: (
+    username: string,
+    password: string,
+    name: string,
+    role: 'super-admin' | 'director' | 'clinician' | 'admin'
+  ) => Promise<{ id: string } | null>;
   logout: () => void;
   refreshToken: () => Promise<boolean>;
   isAuthenticated: boolean;
@@ -358,7 +364,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // User is accepted - get role from position table
-      let userRole = 'clinician'; // Default role
+      let userRole: User['role'] = 'clinician'; // Default role
       
       if (data.position) {
         // Get role from position table using the position UUID
@@ -368,8 +374,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', data.position)
           .single();
         
-        if (!positionError && positionData) {
-          userRole = positionData.role;
+        if (!positionError && positionData && typeof positionData.role === 'string') {
+          const r = positionData.role as string;
+          if (r === 'super-admin' || r === 'director' || r === 'clinician' || r === 'admin') {
+            userRole = r;
+          }
         }
       }
 
@@ -422,7 +431,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (username: string, password: string, name: string, role: 'super-admin' | 'director' | 'clinician' | 'admin') => {
+  const signup = async (
+  username: string,
+  password: string,
+  name: string,
+  role: 'super-admin' | 'director' | 'clinician' | 'admin'
+): Promise<{ id: string } | null> => {
     try {
       // Check if username already exists
       const { data: existingUser, error: checkError } = await supabase
@@ -498,7 +512,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         // Get the role from position table if position was set
-        let userRole = role; // Use the original role as fallback
+        let userRole: User['role'] = role; // Use the original role as fallback
         
         if (positionId) {
           const { data: positionData, error: positionError } = await supabase
@@ -507,8 +521,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .eq('id', positionId)
             .single();
           
-          if (!positionError && positionData) {
-            userRole = positionData.role;
+          if (!positionError && positionData && typeof positionData.role === 'string') {
+            const r = positionData.role as string;
+            if (r === 'super-admin' || r === 'director' || r === 'clinician' || r === 'admin') {
+              userRole = r;
+            }
           }
         }
 
@@ -532,9 +549,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         TokenStorage.storeUser(userProfile);
         
         console.log('✅ User signed up - pending approval');
+
+        // Return only the id for callers that need to store related info (e.g., security question)
+        return { id: data.id };
       }
 
-      return data;
+      return null;
     } catch (error) {
       throw error;
     }

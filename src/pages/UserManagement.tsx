@@ -387,19 +387,19 @@ const UserManagement: React.FC = () => {
                       value: 'clinician', 
                       label: 'Clinician',
                       description: 'Front-line healthcare provider',
-                      icon: User
+                      icon: <User className="w-4 h-4" />
                     },
                     { 
                       value: 'clinical_director', 
                       label: 'Clinical Director',
                       description: 'Department leadership role',
-                      icon: Shield
+                      icon: <Shield className="w-4 h-4" />
                     },
                     { 
                       value: 'admin', 
                       label: 'Admin',
                       description: 'Administrative oversight',
-                      icon: Settings
+                      icon: <Settings className="w-4 h-4" />
                     }
                   ]}
                   icon={<Shield className="w-4 h-4" />}

@@ -167,10 +167,10 @@ const PermissionManagement: React.FC = () => {
   const handleEdit = (user: User) => {
     console.log('Editing user:', user);
     
-    const editDataObj = {
+    const editDataObj: EditUserData = {
       name: user.name,
       username: user.username,
-      role: user.role,
+      role: (user.role === 'admin' ? 'super-admin' : user.role),
       accept: user.accept,
       position_id: user.position_id,
       director_info: user.director_info ? {

@@ -10,17 +10,19 @@ import { EnhancedSelect, MonthYearPicker } from '../components/UI';
 import { generateReviewPDF } from '../utils/pdfGenerator';
 import { AIImprovementService } from '../services/aiAnalysisService';
 
+type ReviewFormEntry = {
+  met: boolean | null;
+  reviewDate?: string; // note_date - specific date when KPI was marked as not met
+  notes?: string;
+  plan?: string;
+  files?: File[];
+  uploadedFiles?: UploadedFile[];
+  existingFileUrl?: string; // Track existing file URL from database
+  existingReviewId?: string; // Track existing review ID for updates
+};
+
 interface ReviewFormData {
-  [kpiId: string]: {
-    met: boolean | null;
-    reviewDate?: string; // note_date - specific date when KPI was marked as not met
-    notes?: string;
-    plan?: string;
-    files?: File[];
-    uploadedFiles?: UploadedFile[];
-    existingFileUrl?: string; // Track existing file URL from database
-    existingReviewId?: string; // Track existing review ID for updates
-  };
+  [kpiId: string]: ReviewFormEntry;
 }
 
 
@@ -187,7 +189,7 @@ const MonthlyReview: React.FC = () => {
 
   // Trigger AI to propose an improvement plan using notes + KPI metadata
   const handleSuggestNextStep = async (kpiId: string, kpiTitle: string, kpiWeight: number) => {
-    const kpiData = reviewData[kpiId] || {};
+    const kpiData: ReviewFormEntry = reviewData[kpiId] || { met: null };
 
     // Require performance notes first
     if (!kpiData.notes || !kpiData.notes.trim()) {
@@ -970,7 +972,7 @@ const MonthlyReview: React.FC = () => {
       {/* KPI Reviews */}
       <div className="space-y-4 sm:space-y-6">
         {kpis.map((kpi, index) => {
-          const kpiData = reviewData[kpi.id] || {};
+          const kpiData: ReviewFormEntry = reviewData[kpi.id] || { met: null };
           const isMet = kpiData.met;
           const hasError = errors[kpi.id];
           

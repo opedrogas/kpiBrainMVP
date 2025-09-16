@@ -58,12 +58,8 @@ export class DocumentServiceFixed {
         });
 
       if (error) {
-        console.error('Supabase upload error details:', {
-          error: error,
-          message: error.message,
-          status: error.status,
-          statusCode: error.statusCode
-        });
+        // Log full error object without referencing non-existent typed properties
+        console.error('Supabase upload error details:', error);
         throw new Error(`Failed to upload ${file.name}: ${error.message}`);
       }
 
